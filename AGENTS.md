@@ -1,8 +1,10 @@
 # Working in this repo (agent rules)
 
 This repo fine-tunes **Qwen3-1.7B (QLoRA)** for **context-sensitive personal-name judgment** in
-educational text — the judgment core of de-identification. Read `docs/plan.md` (the one-week arc and
-the locked behavior spec) and `docs/STATUS.md` (current state) before doing anything.
+educational text — the judgment core of de-identification. Read `docs/brainlift.md` (the **source of
+truth**: mandate, scope, facts, and spiky POVs), `docs/plan.md` (the one-week arc and the locked
+behavior spec), and `docs/STATUS.md` (current state) before doing anything. When a decision conflicts
+with the BrainLift, the BrainLift wins unless the user says otherwise.
 
 ## To ship a change
 Invoke the `shipping-changes` skill. Every change goes on a branch and ships as a real pull request —

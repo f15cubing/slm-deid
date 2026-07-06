@@ -3,13 +3,14 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-06 — repo initialized; agent workflow + plan scaffolded._
+_Last updated: 2026-07-06 — added BrainLift v3 as source of truth._
 
 ## Done
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid).
 - Project scaffold: `README.md`, `.gitignore`, `requirements.txt`.
 - Agent workflow: `AGENTS.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.
 - `docs/plan.md` (one-week build plan) + `docs/agent-workflow-starter-kit.md` (workflow reference).
+- `docs/brainlift.md` (BrainLift v3 — source of truth: mandate, scope, DOK 1–4, spiky POVs).
 
 ## In flight
 - (none yet)

@@ -25,6 +25,7 @@ and negative traps.
 
 | Path | What |
 |---|---|
+| `docs/brainlift.md` | **Source of truth** — mandate, scope, facts (DOK 1–4), and spiky POVs (BrainLift v3). |
 | `docs/plan.md` | The one-week build plan (Mon Jul 6 → Sun Jul 12). |
 | `docs/STATUS.md` | Live "what's done / in-flight / next". Updated on every merge. |
 | `docs/agent-workflow-starter-kit.md` | The multi-agent workflow reference this repo's process is built on. |
