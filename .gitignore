@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# Notebooks
+.ipynb_checkpoints/
+
+# ML / training artifacts
+*.ckpt
+*.safetensors
+*.bin
+*.gguf
+outputs/
+checkpoints/
+runs/
+wandb/
+lora_adapters/
+merged_model/
+*.log
+
+# Data (large / generated). Keep small curated eval + schema under version control explicitly.
+data/generated/
+data/raw/
+*.parquet
+*.arrow
+
+# HF / caches
+.cache/
+hf_cache/
+.hf_home/
+
+# Secrets & env
+.env
+.env.*
+*.key
+secrets/
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp
