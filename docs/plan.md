@@ -59,6 +59,10 @@ cases. Build the held-out eval around these categories:
 CRAPII/TSCC**, and **quarantined** from the data-gen pipeline (no leakage from the teacher that makes
 training data).
 
+> **Concrete day-by-day tasks with specs live in [`docs/tasks/`](tasks/README.md).** This file is the
+> high-level arc; `docs/tasks/day-N.md` has the testable acceptance criteria and checkboxes, and
+> `docs/tasks/README.md` holds the shared repo layout + data/eval schema contract.
+
 ---
 
 ## Arc at a glance
