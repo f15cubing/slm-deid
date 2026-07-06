@@ -17,17 +17,19 @@ matches the BrainLift. No training, no data-gen yet.
   SPOV 7/8 in `docs/brainlift.md` match the locked behavior. ADDRESS/surrogates remain stretch-only.
 
 ## Tasks
-- [ ] Stand up the GPU env (Colab / Modal / RunPod A100, or local 24GB). Record the choice + exact
-      `pip freeze` of the training stack into `requirements.txt` (replace the loose pins).
-- [ ] Load the base model + tokenizer; run one `tag this passage` prompt end-to-end (S1.1).
-- [ ] Verify the chat template: apply with `enable_thinking=False`, print the raw serialized string,
-      confirm no thinking block leaks into output (S1.1).
-- [ ] Create `src/common/tags.py` with the decided syntax (default `⟨NAME⟩…⟨/NAME⟩`). Add
-      `tests/test_tags.py` covering wrap/unwrap round-trip + nested/adjacent tags (S1.2).
-- [ ] Decide angle-bracket vs `@@…##` by tokenizing a tagged sentence and checking the tags stay
-      intact; record the decision + reason in this file (S1.2).
-- [ ] Serialize one full example in the intended training format; save the artifact (S1.3).
-- [ ] Write the scope-lock note (S1.4) at the bottom of this file.
+- [x] Create `src/common/tags.py` with the decided syntax (`⟨NAME⟩…⟨/NAME⟩`). Add `tests/test_tags.py`
+      covering wrap/unwrap round-trip + well-formedness + span offsets (S1.2). **13/13 green locally.**
+- [x] Write prompt + serializer code: `src/common/prompts.py` (`SYSTEM_PROMPT`, `build_messages`,
+      `build_training_messages`, `serialize` with `enable_thinking=False`) (S1.1/S1.3 code).
+- [x] Prep the GPU notebook `notebooks/day1_setup.ipynb` (load model → inference → showcase →
+      serialize + tag tokenizer test → write artifact).
+- [x] Write the scope-lock note (S1.4) — below.
+- [ ] **(GPU, run the notebook)** Stand up the env; run one `tag` prompt end-to-end; confirm
+      non-thinking (no `<think>` leak) (S1.1).
+- [ ] **(GPU)** Confirm the `⟨NAME⟩` markers survive tokenization (notebook §4). If shredded, flip
+      `tags.py` to the `@@…##` fallback and re-run; record the outcome in the decisions block (S1.2).
+- [ ] **(GPU)** Serialize one full example; commit `docs/tasks/artifacts/day1-serialized-example.txt` (S1.3).
+- [ ] **(GPU)** Record the exact `pip freeze` of the training stack into `requirements.txt` (replace loose pins).
 
 ## Deliverables
 - `src/common/tags.py` + `tests/test_tags.py` (green).
@@ -39,8 +41,23 @@ matches the BrainLift. No training, no data-gen yet.
 Base model runs and responds in non-thinking mode; tag syntax locked in `tags.py`; SPOVs match target.
 
 ---
-### Decisions (fill in)
-- Tag syntax chosen: `…`  — reason: `…`
-- Env: `…`
-### Scope-lock note (fill in)
-`…`
+### Decisions
+- **Tag syntax:** `⟨NAME⟩…⟨/NAME⟩` (U+27E8 / U+27E9). Reason: single non-ASCII codepoints, so they
+  never collide with ASCII `<`/`>` a student might type in prose or code (`a < b`, `List<Name>`).
+  Lives only in `src/common/tags.py`. **Pending GPU confirmation** that the markers tokenize cleanly
+  (notebook §4); fall back to `@@…##` only if they shred.
+- **Base model:** `unsloth/Qwen3-1.7B-unsloth-bnb-4bit` (fastest QLoRA path, fits 24GB / Colab).
+- **Env:** code + tokenizer on Mac (no CUDA); model load + inference via `notebooks/day1_setup.ipynb`
+  on Colab/RunPod. `requirements.txt` to be pinned from the GPU env's `pip freeze`.
+- **Teacher (Day 2):** provider configurable (Anthropic/OpenAI); no key wired yet.
+- **Real data:** none yet — start synthetic-only + hand-built eval.
+
+### Scope-lock note (S1.4)
+Mandate = **context-sensitive personal-NAME judgment** in educational text: tag every span that
+refers to a real person's name in `⟨NAME⟩…⟨/NAME⟩`, leave identically-spelled non-person uses
+untagged, and change no other character (integrity: `unwrap(output) == input`). Pattern-type PII
+(email/phone/ID/date/URL) and output format are **out of scope for the model** — owned by
+regex/checksums + constrained decoding in the surrounding pipeline. **ADDRESS tagging and surrogate
+generation are stretch-only** and deliberately excluded from the core. This matches `docs/brainlift.md`
+SPOV 7 (fine-tune earns its keep exactly on the un-regexable judgment core, benchmarked vs. prompting)
+and SPOV 8 (the model's job is judgment, not pattern-detection or formatting).
