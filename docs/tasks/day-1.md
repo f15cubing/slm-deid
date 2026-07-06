@@ -24,12 +24,18 @@ matches the BrainLift. No training, no data-gen yet.
 - [x] Prep the GPU notebook `notebooks/day1_setup.ipynb` (load model → inference → showcase →
       serialize + tag tokenizer test → write artifact).
 - [x] Write the scope-lock note (S1.4) — below.
-- [ ] **(GPU, run the notebook)** Stand up the env; run one `tag` prompt end-to-end; confirm
-      non-thinking (no `<think>` leak) (S1.1).
-- [ ] **(GPU)** Confirm the `⟨NAME⟩` markers survive tokenization (notebook §4). If shredded, flip
-      `tags.py` to the `@@…##` fallback and re-run; record the outcome in the decisions block (S1.2).
-- [ ] **(GPU)** Serialize one full example; commit `docs/tasks/artifacts/day1-serialized-example.txt` (S1.3).
-- [ ] **(GPU)** Record the exact `pip freeze` of the training stack into `requirements.txt` (replace loose pins).
+- [x] **Confirmed `⟨NAME⟩` markers survive tokenization** — via the real `Qwen/Qwen3-1.7B` tokenizer
+      (CPU): OPEN=3 tokens, CLOSE=4 tokens, both round-trip exactly; full tagged sentence round-trips
+      and `unwrap(decoded)==raw`. Angle-bracket syntax **kept** (no `@@…##` fallback needed) (S1.2).
+- [x] **Serialized one full example** through the real chat template with `enable_thinking=False`;
+      committed `docs/tasks/artifacts/day1-serialized-example.txt`. It shows the **non-thinking empty
+      `<think></think>` block**, confirming the template behaves as required (S1.3).
+      (Run locally via `PYTHONPATH=. python scripts/day1_cpu_check.py --no-generate`.)
+- [ ] **(GPU / Colab)** Run one `tag` generation end-to-end and confirm the model *responds* with no
+      `<think>` leak (S1.1). Local CPU attempt blocked: the 3.4GB weight download stalls under the
+      network sandbox — this belongs on Colab (`notebooks/day1_setup.ipynb`) where the template +
+      tokenizer are already proven identical.
+- [ ] **(GPU / Colab)** Record the exact `pip freeze` of the training stack into `requirements.txt`.
 
 ## Deliverables
 - `src/common/tags.py` + `tests/test_tags.py` (green).
@@ -44,8 +50,8 @@ Base model runs and responds in non-thinking mode; tag syntax locked in `tags.py
 ### Decisions
 - **Tag syntax:** `⟨NAME⟩…⟨/NAME⟩` (U+27E8 / U+27E9). Reason: single non-ASCII codepoints, so they
   never collide with ASCII `<`/`>` a student might type in prose or code (`a < b`, `List<Name>`).
-  Lives only in `src/common/tags.py`. **Pending GPU confirmation** that the markers tokenize cleanly
-  (notebook §4); fall back to `@@…##` only if they shred.
+  Lives only in `src/common/tags.py`. **CONFIRMED** against the real Qwen3 tokenizer (OPEN=3 / CLOSE=4
+  tokens, exact round-trip) — kept, no `@@…##` fallback needed.
 - **Base model:** `unsloth/Qwen3-1.7B-unsloth-bnb-4bit` (fastest QLoRA path, fits 24GB / Colab).
 - **Env:** code + tokenizer on Mac (no CUDA); model load + inference via `notebooks/day1_setup.ipynb`
   on Colab/RunPod. `requirements.txt` to be pinned from the GPU env's `pip freeze`.

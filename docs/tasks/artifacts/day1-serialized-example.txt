@@ -1,0 +1,19 @@
+<|im_start|>system
+You de-identify educational text by tagging personal names, and nothing else.
+
+Rules:
+1. Wrap every span that refers to a REAL PERSON'S NAME in ⟨NAME⟩…⟨/NAME⟩.
+2. Tag EVERY mention of each personal name, including first-name-only mentions.
+3. Do NOT tag identically-spelled non-person uses: a method or unit named after someone ("the Newton method", "Newton's laws"), a place ("Chelsea", "Darwin", "Florence"), a common word ("Grace", "Hope", "Bishop"), a brand, or a course title.
+4. Do NOT tag emails, phone numbers, IDs, dates, or URLs — those are handled elsewhere.
+5. Change NOTHING else. Return the input text byte-for-byte identical except for the inserted tags. Do not add, remove, reword, reorder, or reformat any other character.
+
+Output ONLY the tagged text.<|im_end|>
+<|im_start|>user
+Chelsea helped me revise, but last year I also visited Chelsea in London.<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+⟨NAME⟩Chelsea⟨/NAME⟩ helped me revise, but last year I also visited Chelsea in London.<|im_end|>

@@ -14,11 +14,14 @@ _Last updated: 2026-07-06 — Day 1 code landed (tags + prompts + notebook); GPU
 - `docs/tasks/` — per-day specs (day-1..7) + shared repo/schema contract (`docs/tasks/README.md`).
 
 ## In flight
-- **[Day 1](tasks/day-1.md)** — CODE DONE: `src/common/tags.py` (+13 passing tests), `src/common/prompts.py`
-  (system prompt + non-thinking serializer), `notebooks/day1_setup.ipynb`, `pyproject.toml`. Tag syntax
-  locked to `⟨NAME⟩…⟨/NAME⟩`; scope locked to NAME-only. **GPU-pending:** run the notebook to confirm
-  non-thinking inference (S1.1), tokenizer tag survival, serialized-example artifact (S1.3), and pin
-  `requirements.txt`.
+- **[Day 1](tasks/day-1.md)** — nearly complete. DONE: `src/common/tags.py` (+13 passing tests),
+  `src/common/prompts.py` (system prompt + non-thinking serializer), `notebooks/day1_setup.ipynb`,
+  `scripts/day1_cpu_check.py`, `pyproject.toml`. Tag syntax `⟨NAME⟩…⟨/NAME⟩` **confirmed** against the
+  real Qwen3 tokenizer (OPEN=3/CLOSE=4 tokens, exact round-trip); non-thinking chat template
+  **verified** via the serialized artifact (`docs/tasks/artifacts/day1-serialized-example.txt`, S1.3);
+  scope locked to NAME-only. **Only remaining item (Colab/GPU):** run one real `tag` generation to
+  confirm the model responds (S1.1) + pin `requirements.txt` — local CPU blocked by the 3.4GB weight
+  download stalling under the network sandbox.
 
 ## Next  — per `docs/tasks/`
 - **[Day 2](tasks/day-2.md):** eval harness (behavioral checks + metrics + LLM-judge + base-vs-tuned scaffold) BEFORE training; quarantined hard-cases set; data-gen pipeline; 50-example smoke test.
