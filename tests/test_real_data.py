@@ -71,6 +71,25 @@ def test_load_crapii_from_file(tmp_path):
         ex.validate()
 
 
+def test_crapii_dataset_uses_NAME_label_and_jsonl(tmp_path):
+    # The langdonholmes dataset is JSON Lines and labels names as NAME (not NAME_STUDENT).
+    rec = {
+        "document": 379,
+        "full_text": "Hi John Doe. Tel: (555)555-5555",
+        "tokens": ["Hi", "John", "Doe", ".", "Tel", ":", "(555)555-5555"],
+        "trailing_whitespace": [True, True, False, True, False, True, False],
+        "labels": ["O", "B-NAME", "I-NAME", "O", "O", "O", "B-PHONE_NUM"],
+    }
+    p = tmp_path / "data.jsonl"
+    p.write_text("\n".join([json.dumps(rec), json.dumps(rec)]), encoding="utf-8")
+    exs = load_crapii(p)
+    assert len(exs) == 2
+    ex = exs[0]
+    assert [s.text for s in ex.name_spans()] == ["John Doe"]  # NAME run merged
+    assert "(555)555-5555" in tags.unwrap(ex.target)  # phone left untagged
+    assert ex.target == f"Hi {tags.wrap('John Doe')}. Tel: (555)555-5555"
+
+
 def test_names_only_filter(tmp_path):
     no_name = {
         "document": 10,
