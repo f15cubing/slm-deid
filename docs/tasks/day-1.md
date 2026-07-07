@@ -31,11 +31,12 @@ matches the BrainLift. No training, no data-gen yet.
       committed `docs/tasks/artifacts/day1-serialized-example.txt`. It shows the **non-thinking empty
       `<think></think>` block**, confirming the template behaves as required (S1.3).
       (Run locally via `PYTHONPATH=. python scripts/day1_cpu_check.py --no-generate`.)
-- [ ] **(GPU / Colab)** Run one `tag` generation end-to-end and confirm the model *responds* with no
-      `<think>` leak (S1.1). Local CPU attempt blocked: the 3.4GB weight download stalls under the
-      network sandbox — this belongs on Colab (`notebooks/day1_setup.ipynb`) where the template +
-      tokenizer are already proven identical.
-- [ ] **(GPU / Colab)** Record the exact `pip freeze` of the training stack into `requirements.txt`.
+- [x] **Ran one `tag` generation end-to-end on Colab (T4)** — model responds, no `<think>` leak (S1.1).
+      Real output: `Newton was frustrated…` → `⟨NAME⟩Newton⟨/NAME⟩ was frustrated…` (person correctly
+      tagged, integrity preserved). `unsloth/Qwen3-1.7B-unsloth-bnb-4bit` loads on GPU; non-thinking
+      confirmed live.
+- [ ] **(Optional, from Colab)** Record the exact `pip freeze` of the training stack into
+      `requirements.txt` — nice-to-have for repro; not blocking the checkpoint.
 
 ## Deliverables
 - `src/common/tags.py` + `tests/test_tags.py` (green).
@@ -43,8 +44,9 @@ matches the BrainLift. No training, no data-gen yet.
 - Pinned `requirements.txt`; env choice recorded.
 - Tag-syntax decision + scope-lock note (below).
 
-## Checkpoint (hard gate)
-Base model runs and responds in non-thinking mode; tag syntax locked in `tags.py`; SPOVs match target.
+## Checkpoint (hard gate) — ✅ MET (2026-07-06)
+Base model runs and responds in non-thinking mode (verified live on Colab T4); tag syntax locked in
+`tags.py` and confirmed against the real Qwen3 tokenizer; scope + SPOVs match target.
 
 ---
 ### Decisions
