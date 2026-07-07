@@ -26,7 +26,10 @@ _Last updated: 2026-07-07 — Day 2 DONE (eval-before-train gate + smoke loop ve
   Eval-before-training gate satisfied. Base already shows the target gap (over-tags on ambiguous cases).
 
 ## In flight
-- (none — ready to start Day 3)
+- **[Day 3](tasks/day-3.md)** — CRAPII loader (`src/datagen/real_data.py`, JSONL + NAME/NAME_STUDENT)
+  + `deleak_and_split` helper built & tested (74 tests). `notebooks/day3_dataset_train_eval.ipynb`
+  ready: CRAPII slice + Faker negatives (+ optional teacher synthetic) → real QLoRA (3 epochs) →
+  base-vs-tuned on the quarantined hard cases. **Run it on Colab (GPU) for the midweek gate numbers.**
 
 ## Next  — per `docs/tasks/`
 - **[Day 3](tasks/day-3.md):** generate & filter the real v1 dataset (800–2,000) with a teacher API

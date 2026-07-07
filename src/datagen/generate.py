@@ -44,6 +44,26 @@ def _eval_inputs(eval_dir: str) -> set[str]:
     return {_norm(ex.input) for f in p.rglob("*.jsonl") for ex in read_jsonl(f)}
 
 
+def deleak_and_split(
+    examples: list[Example],
+    eval_dir: str = "eval",
+    val_frac: float = 0.1,
+    seed: int = 0,
+) -> tuple[list[Example], list[Example], int]:
+    """Drop any example whose input matches a quarantined eval input, then split train/val.
+
+    Returns (train, val, n_eval_leak_dropped). Used by both the teacher pipeline and the
+    real-data (CRAPII + negatives) assembly in the Day-3 notebook.
+    """
+    eval_inputs = _eval_inputs(eval_dir)
+    deleaked = [ex for ex in examples if _norm(ex.input) not in eval_inputs]
+    n_leak = len(examples) - len(deleaked)
+    rng = random.Random(seed)
+    rng.shuffle(deleaked)
+    n_val = int(len(deleaked) * val_frac)
+    return deleaked[n_val:], deleaked[:n_val], n_leak
+
+
 def build_dataset(
     cfg: DatagenConfig,
     teacher: TeacherGenerator,
@@ -67,16 +87,9 @@ def build_dataset(
     # 3) quality gate
     kept, drops = filter_examples(raw, verifier_targets)
 
-    # 4) eval-leakage filter (hard ceiling: nothing from eval may enter training)
-    eval_inputs = _eval_inputs(cfg.eval_dir)
-    deleaked = [ex for ex in kept if _norm(ex.input) not in eval_inputs]
-    drops["eval_leak"] = len(kept) - len(deleaked)
-
-    # 5) deterministic train/val split
-    rng = random.Random(cfg.seed)
-    rng.shuffle(deleaked)
-    n_val = int(len(deleaked) * cfg.val_frac)
-    val, train = deleaked[:n_val], deleaked[n_val:]
+    # 4) eval-leakage filter (hard ceiling) + deterministic train/val split
+    train, val, n_leak = deleak_and_split(kept, cfg.eval_dir, cfg.val_frac, cfg.seed)
+    drops["eval_leak"] = n_leak
     return train, val, drops
 
 

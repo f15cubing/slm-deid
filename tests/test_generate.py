@@ -1,7 +1,8 @@
 """Day 2 — data-gen orchestration (mock teacher, no network)."""
 
 from src.common import tags
-from src.datagen.generate import DatagenConfig, build_dataset, write_splits
+from src.common.schema import Example, Span, dumps
+from src.datagen.generate import DatagenConfig, build_dataset, deleak_and_split, write_splits
 from src.datagen.teacher import TeacherGenerator
 
 
@@ -38,6 +39,28 @@ def test_build_dataset_drops_verifier_disagreement():
     train, val, drops = build_dataset(cfg, teacher)
     assert len(train) + len(val) == 0
     assert drops.get("verifier_disagreement") == 5
+
+
+def test_deleak_and_split_drops_eval_matches(tmp_path):
+    # One example duplicates a quarantined eval input -> must be dropped.
+    (tmp_path / "eval").mkdir()
+    raw_eval = "Chelsea helped me revise my thesis."
+    tgt_eval = f"{tags.wrap('Chelsea')} helped me revise my thesis."
+    ev = Example(id="e", input=raw_eval, target=tgt_eval, spans=[Span(0, 7, "Chelsea", True)],
+                 quarantine=True).validate()
+    (tmp_path / "eval" / "hc.jsonl").write_text(dumps(ev) + "\n", encoding="utf-8")
+
+    leak = Example(id="leak", input=raw_eval, target=tgt_eval,
+                   spans=[Span(0, 7, "Chelsea", True)]).validate()
+    clean = Example(id="ok", input="Ada coded.", target=f"{tags.wrap('Ada')} coded.",
+                    spans=[Span(0, 3, "Ada", True)]).validate()
+
+    train, val, n_leak = deleak_and_split(
+        [leak, clean], eval_dir=str(tmp_path / "eval"), val_frac=0.0, seed=0
+    )
+    assert n_leak == 1
+    ids = {e.id for e in train + val}
+    assert ids == {"ok"}
 
 
 def test_write_splits(tmp_path):
