@@ -31,6 +31,7 @@ CATEGORIES = {
     "negative_trap",
     "adversarial",
     "easy",
+    "real",  # sourced from a real corpus (mixed categories); tagged per that corpus's labels
 }
 SOURCES = {
     "synthetic_teacher",
