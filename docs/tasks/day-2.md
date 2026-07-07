@@ -50,23 +50,26 @@ eval and behavioral checks are committed and green.
   loop must run.
 
 ## Tasks
-- [ ] TDD `behavioral_checks.py` (write `tests/test_behavioral_checks.py` first) — S2.2.
-- [ ] TDD `metrics.py` against a fixed fixture with hand-computed expected values — S2.3.
-- [ ] Implement `infer.py` (`tag(passage, model) -> tagged_str`) used by eval + demo.
-- [ ] Implement `judge.py` with a strict rubric prompt + JSON schema; temp=0 — S2.4.
-- [ ] Implement `eval/run.py` base-vs-tuned scaffold + markdown table writer — S2.5.
-- [ ] Build `eval/hardcases/` by hand + mine real CRAPII/TSCC; tag categories + paraphrase groups;
-      validate with `schema.py` — S2.6.
-- [ ] Add `tests/test_no_eval_leakage.py` overlap guard — S2.7.
-- [ ] Implement `teacher.py`, `negatives.py`, `quality_gate.py` + `configs/datagen.yaml` — S2.8–S2.10.
-- [ ] Implement `train/dataset.py` (chat template, `enable_thinking=False`, completion-only masking)
-      and a minimal `train/qlora.py` + `configs/train.yaml`.
-- [ ] Run the 50-example smoke test; fix wiring until it's green — S2.11.
+- [x] TDD `behavioral_checks.py` (S2.2) — `src/eval/behavioral_checks.py`, 7 tests.
+- [x] TDD `metrics.py` (S2.3) — `src/eval/metrics.py` (P/R/F5, rates, consistency, per-cat, md table), 7 tests.
+- [x] Implement `infer.py` (`Tagger`/`HFTagger`/`FunctionTagger`, lazy torch) — used by eval + demo.
+- [x] Implement `judge.py` (S2.4) — reference-based LLM-judge, provider-agnostic, JSON parse,
+      behavioral cross-check; 4 tests (mocked).
+- [x] Implement `eval/run.py` base-vs-tuned scaffold + markdown table (S2.5) — pure core, 4 tests; thin CLI.
+- [x] Build `eval/hardcases/` (S2.6) — 51 validated ambiguous scenarios across all categories +
+      paraphrase groups (`scripts/build_hardcases.py`). *(Grow toward 80–150 + mine real CRAPII/TSCC when access lands.)*
+- [x] Add `tests/test_no_eval_leakage.py` overlap guard (S2.7).
+- [x] Implement `teacher.py`, `negatives.py`, `quality_gate.py` + `configs/datagen.yaml` (S2.8–S2.10)
+      + `generate.py` orchestrator; 16 tests.
+- [x] Implement `train/dataset.py` (chat template, non-thinking, completion-only) + `train/qlora.py`
+      + `configs/train.yaml`; pure parts tested.
+- [ ] **(GPU / Colab)** Run the 50-example smoke test end-to-end — `notebooks/day2_smoke.ipynb`
+      (generate junk → QLoRA 1 epoch → base-vs-tuned eval). Fix wiring until green (S2.11).
 
 ## Deliverables
-- Eval harness (3 pieces) + passing tests; `eval/hardcases/` quarantined set; data-gen pipeline;
-  a smoke-test report under `data/eval_reports/`.
+- Eval harness (3 pieces) + passing tests (67 total); `eval/hardcases/` quarantined set (51); data-gen
+  pipeline; `notebooks/day2_smoke.ipynb`. Smoke-test report under `data/eval_reports/` after the Colab run.
 
 ## Checkpoint (hard gate)
-The full loop runs end-to-end on 50 junk examples, and the eval + behavioral checks exist and are
-green **before** any real training. STATUS.md marks the eval harness as Done.
+Eval + behavioral checks exist and are green **before** any real training — **DONE** (67 tests).
+Full loop end-to-end on 50 junk examples — **run `notebooks/day2_smoke.ipynb` on Colab to confirm**.
