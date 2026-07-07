@@ -1,0 +1,16 @@
+# Data-gen config (Day 2 smoke defaults; scale counts up on Day 3).
+# Weighted toward the hard ambiguous NAME categories (the crux).
+category_counts:
+  person_vs_eponym: 10
+  person_vs_place: 10
+  person_vs_common: 10
+  first_name_only: 6
+  possessive: 6
+  third_party: 6
+  negative_trap: 4
+  easy: 3
+negatives: 15        # Faker pattern-type negatives (emails/phones/IDs untagged)
+seed: 0
+val_frac: 0.1
+out_dir: data
+eval_dir: eval       # used only for the leakage filter; never read as training data
