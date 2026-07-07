@@ -2,18 +2,27 @@
 
 from src.common import tags
 from src.common.schema import Example, Span
-from src.train.dataset import RESPONSE_TEMPLATE, example_to_messages
+from src.train.dataset import example_to_messages, example_to_prompt_completion
+
+
+def _ex():
+    raw = "Sarah wrote this."
+    tgt = f"{tags.wrap('Sarah')} wrote this."
+    return Example(id="a", input=raw, target=tgt, spans=[Span(0, 5, "Sarah", True)]).validate()
 
 
 def test_example_to_messages_shape():
-    raw = "Sarah wrote this."
-    tgt = f"{tags.wrap('Sarah')} wrote this."
-    ex = Example(id="a", input=raw, target=tgt, spans=[Span(0, 5, "Sarah", True)]).validate()
-    msgs = example_to_messages(ex)
+    msgs = example_to_messages(_ex())
     assert [m["role"] for m in msgs] == ["system", "user", "assistant"]
-    assert msgs[1]["content"] == raw
-    assert msgs[2]["content"] == tgt
+    assert msgs[1]["content"] == "Sarah wrote this."
+    assert msgs[2]["content"] == f"{tags.wrap('Sarah')} wrote this."
 
 
-def test_response_template_is_assistant_marker():
-    assert "assistant" in RESPONSE_TEMPLATE
+def test_example_to_prompt_completion_shape():
+    pc = example_to_prompt_completion(_ex())
+    assert set(pc) == {"prompt", "completion"}
+    assert [m["role"] for m in pc["prompt"]] == ["system", "user"]
+    assert pc["prompt"][1]["content"] == "Sarah wrote this."
+    assert pc["completion"] == [
+        {"role": "assistant", "content": f"{tags.wrap('Sarah')} wrote this."}
+    ]

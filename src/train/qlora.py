@@ -22,11 +22,10 @@ def load_config(path: str) -> dict:
 
 def train(cfg: dict, smoke: bool = False) -> str:
     """Run QLoRA training; returns the output adapter dir."""
-    from datasets import Dataset
-    from trl import DataCollatorForCompletionOnlyLM, SFTConfig, SFTTrainer
+    from trl import SFTConfig, SFTTrainer
     from unsloth import FastLanguageModel
 
-    from src.train.dataset import RESPONSE_TEMPLATE, build_sft_dataset
+    from src.train.dataset import build_sft_dataset
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=cfg["base_model"],
@@ -44,23 +43,20 @@ def train(cfg: dict, smoke: bool = False) -> str:
         random_state=cfg["seed"],
     )
 
-    ds: Dataset = build_sft_dataset(cfg["train_path"], tokenizer)
+    ds = build_sft_dataset(cfg["train_path"])  # prompt-completion format
     epochs = 1 if smoke else cfg["num_train_epochs"]
     if smoke:
         ds = ds.select(range(min(len(ds), 50)))
     output_dir = cfg["output_dir"] + ("-smoke" if smoke else "")
 
-    collator = DataCollatorForCompletionOnlyLM(
-        response_template=RESPONSE_TEMPLATE, tokenizer=tokenizer
-    )
+    # Modern TRL: completion-only masking is built into SFTConfig (no data collator).
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         train_dataset=ds,
-        data_collator=collator,
         args=SFTConfig(
-            dataset_text_field="text",
-            max_seq_length=cfg["max_seq_len"],
+            completion_only_loss=True,   # loss on the tagged completion only
+            max_length=cfg["max_seq_len"],
             per_device_train_batch_size=cfg["per_device_train_batch_size"],
             gradient_accumulation_steps=cfg["gradient_accumulation_steps"],
             warmup_ratio=cfg["warmup_ratio"],
