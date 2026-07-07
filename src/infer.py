@@ -47,6 +47,10 @@ class HFTagger:
         self.tokenizer = tokenizer
         self.max_new_tokens = max_new_tokens
         self.name = name
+        # Clear the config's default max_length so max_new_tokens doesn't warn every call.
+        gen_cfg = getattr(model, "generation_config", None)
+        if gen_cfg is not None:
+            gen_cfg.max_length = None
 
     def tag(self, passage: str) -> str:
         import torch  # lazy

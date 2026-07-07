@@ -63,13 +63,15 @@ eval and behavioral checks are committed and green.
       + `generate.py` orchestrator; 16 tests.
 - [x] Implement `train/dataset.py` (chat template, non-thinking, completion-only) + `train/qlora.py`
       + `configs/train.yaml`; pure parts tested.
-- [ ] **(GPU / Colab)** Run the 50-example smoke test end-to-end — `notebooks/day2_smoke.ipynb`
-      (generate junk → QLoRA 1 epoch → base-vs-tuned eval). Fix wiring until green (S2.11).
+- [x] **Ran the 50-example smoke test end-to-end on Colab (T4)** — `notebooks/day2_smoke.ipynb`
+      (generate junk → QLoRA 1 epoch → base-vs-tuned eval) completed green (S2.11). Junk-adapter
+      numbers as expected (base over-tags: over_tag_rate 0.53 / integrity 0.55; smoke adapter
+      under-tags after training on negatives).
 
 ## Deliverables
 - Eval harness (3 pieces) + passing tests (67 total); `eval/hardcases/` quarantined set (51); data-gen
-  pipeline; `notebooks/day2_smoke.ipynb`. Smoke-test report under `data/eval_reports/` after the Colab run.
+  pipeline; `notebooks/day2_smoke.ipynb` — loop verified end-to-end on Colab.
 
-## Checkpoint (hard gate)
-Eval + behavioral checks exist and are green **before** any real training — **DONE** (67 tests).
-Full loop end-to-end on 50 junk examples — **run `notebooks/day2_smoke.ipynb` on Colab to confirm**.
+## Checkpoint (hard gate) — ✅ MET (2026-07-07)
+Eval + behavioral checks exist and are green **before** any real training (67 tests); the full
+generate→train→eval loop ran end-to-end on 50 junk examples on Colab T4.
