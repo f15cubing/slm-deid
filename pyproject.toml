@@ -10,3 +10,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Data-authoring files: long inline scenario strings are clearer on one line.
+"scripts/build_hardcases.py" = ["E501"]
