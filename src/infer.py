@@ -72,7 +72,7 @@ class HFTagger:
                 pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id,
             )
         completion = self.tokenizer.decode(
-            out[0][enc["input_ids"].shape[-1]:], skip_special_tokens=True
+            out[0][enc["input_ids"].shape[-1] :], skip_special_tokens=True
         )
         return completion.strip()
 

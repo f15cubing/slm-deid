@@ -31,8 +31,10 @@ must. On the Mac, prefix runs with `PYTORCH_ENABLE_MPS_FALLBACK=1` so any op MPS
 
 | Goal | Command |
 |---|---|
-| Lint / format | `ruff check . && ruff format --check .` |
-| Run all tests | `pytest -q` |
+| **Code-quality gate (do this before every PR)** | `make check` (= lint + format-check + tests) — **verified green** |
+| Auto-fix lint + formatting | `make fix` |
+| Lint / format | `ruff check . && ruff format --check .` — **verified** (notebooks are excluded in `pyproject.toml`) |
+| Run all tests | `pytest -q` — **verified** (hermetic; runs offline in ~1s) |
 | Run behavioral-check tests only | `pytest tests/test_behavioral_checks.py -q` |
 | Generate dataset | `python -m src.datagen.generate --config configs/datagen.yaml` |
 | QLoRA train (Colab/CUDA) | `python -m src.train.qlora --config configs/train.yaml` |

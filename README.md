@@ -30,7 +30,8 @@ and negative traps.
 | `docs/STATUS.md` | Live "what's done / in-flight / next". Updated on every merge. |
 | `docs/agent-workflow-starter-kit.md` | The multi-agent workflow reference this repo's process is built on. |
 | `AGENTS.md` | Always-loaded agent rules: hard ceilings + skill routing. |
-| `.cursor/skills/` | Project skills: `shipping-changes`, `building-and-testing`. |
+| `.cursor/skills/` | Project skills: `shipping-changes`, `building-and-testing` (mirrored to `.claude/skills/` for Claude Code). |
+| `Makefile` / `.github/workflows/ci.yml` | Code-quality gate: `make check` (lint + format-check + tests), enforced on every push/PR. |
 
 ## Getting started
 
@@ -47,5 +48,15 @@ pip install -r requirements.txt
   Linux-gated in `requirements.txt`, so a Mac `pip install` skips them.
 
 Exact build / run / train / eval commands live in `.cursor/skills/building-and-testing/SKILL.md`.
+
+### Code quality (the green gate)
+
+```bash
+make check   # ruff check + ruff format --check + pytest — run before every PR
+make fix     # auto-fix lint + apply formatting
+```
+
+`make check` mirrors the `code-quality` CI workflow, so a green run locally == a green tick on the PR.
+It's the "verify what's verifiable" step the `shipping-changes` skill relies on.
 
 See `docs/plan.md` for the day-by-day arc and `AGENTS.md` for how to ship changes here.

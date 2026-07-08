@@ -49,9 +49,7 @@ class TestWellFormed:
         assert not tags.is_well_formed(f"a {NAME_CLOSE}x{NAME_OPEN} b")
 
     def test_nesting_rejected(self):
-        assert not tags.is_well_formed(
-            f"{NAME_OPEN}a{NAME_OPEN}b{NAME_CLOSE}{NAME_CLOSE}"
-        )
+        assert not tags.is_well_formed(f"{NAME_OPEN}a{NAME_OPEN}b{NAME_CLOSE}{NAME_CLOSE}")
 
 
 class TestTaggedSpans:

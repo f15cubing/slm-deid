@@ -94,9 +94,7 @@ def _pair_user(token: str, category: str, register: str, sense: str) -> str:
         )
     else:
         nonperson = _NONPERSON_SENSE.get(category, "its non-person sense")
-        directive = (
-            f'Use "{token}" as {nonperson}. It is NOT a person here, so tag NOTHING.'
-        )
+        directive = f'Use "{token}" as {nonperson}. It is NOT a person here, so tag NOTHING.'
     return (
         f"Register: {register}. Category: {category}. SENSE={sense}. "
         f"Write ONE short, natural educational passage. {directive}"

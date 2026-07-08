@@ -48,3 +48,8 @@ secrets/
 .DS_Store
 .idea/
 *.swp
+
+# Claude Code: track shared skills (.claude/skills) but not local worktree checkouts or state
+.claude/worktrees/
+.claude/settings.local.json
+.claude/projects/

@@ -6,8 +6,14 @@ from src.datagen import quality_gate as qg
 
 
 def _ex(raw, target, spans, id_="g"):
-    return Example(id=id_, input=raw, target=target, spans=spans,
-                   source="synthetic_teacher", category="person_vs_place")
+    return Example(
+        id=id_,
+        input=raw,
+        target=target,
+        spans=spans,
+        source="synthetic_teacher",
+        category="person_vs_place",
+    )
 
 
 GOOD_RAW = "Chelsea helped me, but I visited Chelsea in London."
@@ -63,8 +69,15 @@ def test_filter_counts_drops_by_reason():
 
 # --- Day-4 TASK 3: category-semantics gate (labels must be trustworthy) ------------------
 def _sem_ex(raw, target, spans, category, token=None, id_="s"):
-    return Example(id=id_, input=raw, target=target, spans=spans,
-                   source="synthetic_teacher", category=category, ambiguous_token=token)
+    return Example(
+        id=id_,
+        input=raw,
+        target=target,
+        spans=spans,
+        source="synthetic_teacher",
+        category=category,
+        ambiguous_token=token,
+    )
 
 
 def test_negative_trap_that_tags_a_name_is_dropped():
@@ -130,8 +143,13 @@ def test_eponymous_possessive_negative_passes():
 
 def test_filter_counts_semantics_drops_by_reason():
     good = _ex(GOOD_RAW, GOOD_TGT, GOOD_SPANS, id_="ok")
-    nt = _sem_ex("Skinner led the class.", f"{tags.wrap('Skinner')} led the class.",
-                 [Span(0, 7, "Skinner", True)], "negative_trap", id_="nt")
+    nt = _sem_ex(
+        "Skinner led the class.",
+        f"{tags.wrap('Skinner')} led the class.",
+        [Span(0, 7, "Skinner", True)],
+        "negative_trap",
+        id_="nt",
+    )
     kept, drops = qg.filter_examples([good, nt])
     assert [e.id for e in kept] == ["ok"]
     assert drops == {"negative_trap_has_name": 1}

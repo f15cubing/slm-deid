@@ -18,8 +18,8 @@ from dataclasses import dataclass
 # --- The locked syntax (decision recorded in docs/tasks/day-1.md) -----------------------
 # Primary: mathematical angle brackets U+27E8 / U+27E9. These are single codepoints, so they
 # never collide with the ASCII ``<`` / ``>`` a student might type in prose or code.
-NAME_OPEN = "\u27e8NAME\u27e9"      # ⟨NAME⟩
-NAME_CLOSE = "\u27e8/NAME\u27e9"    # ⟨/NAME⟩
+NAME_OPEN = "\u27e8NAME\u27e9"  # ⟨NAME⟩
+NAME_CLOSE = "\u27e8/NAME\u27e9"  # ⟨/NAME⟩
 
 # Matches one well-formed, non-nested tagged span; group "name" is the inner text.
 _SPAN_RE = re.compile(
@@ -86,7 +86,7 @@ def tagged_spans(tagged: str) -> list[TaggedSpan]:
     """
     spans: list[TaggedSpan] = []
     raw_cursor = 0  # position in the unwrapped string
-    last_end = 0    # position in the tagged string we've consumed up to
+    last_end = 0  # position in the tagged string we've consumed up to
     for m in _SPAN_RE.finditer(tagged):
         # advance raw_cursor by the untagged text between the previous match and this one
         between = unwrap(tagged[last_end : m.start()])

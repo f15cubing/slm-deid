@@ -6,6 +6,12 @@
 _Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned numbers: F5 0.19→0.61, leakage halved; over-tagging is the Day-4 data-fix target). Trained locally on MPS._
 
 ## Done
+- **Code-quality loop (`make check` + CI)** — `Makefile` gate (ruff `check` + `format --check` + `pytest`)
+  and a GitHub Actions `code-quality` workflow running the same on every push/PR. Made the baseline green:
+  `ruff format` on `src/`+`tests/` and excluded exploratory `notebooks/` from the linter (`pyproject.toml`).
+  Project skills mirrored to `.claude/skills/` (symlinks into `.cursor/skills/`) so Claude Code discovers
+  `shipping-changes` + `building-and-testing` too. CI installs only the CPU deps the hermetic suite uses
+  (ruff/pytest/torch/faker). 124 passed, 2 skipped.
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
 - Project scaffold: `README.md`, `.gitignore`, `requirements.txt`.
 - Agent workflow: `AGENTS.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.
