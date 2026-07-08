@@ -100,6 +100,30 @@ def drop_eval_token_overlap(
     return kept, dropped
 
 
+def drop_eval_surface_overlap(examples: list[Example]) -> tuple[list[Example], int]:
+    """Passage-level eval-surface guard (Day-4 hardening; a hard ceiling).
+
+    Drops any example whose passage contains ANY eval ambiguous surface anywhere (tagged or
+    not) — not just the intended ``ambiguous_token``. This closes the hole where the teacher
+    invents a famous person (e.g. 'Charles Darwin') whose surname is an eval token, which the
+    intended-token-only :func:`drop_eval_token_overlap` misses. Static (uses ``vocab.BLOCKLIST``).
+    """
+    kept: list[Example] = []
+    dropped = 0
+    for ex in examples:
+        if vocab.blocklist_surfaces_in(ex.input):
+            dropped += 1
+            continue
+        kept.append(ex)
+    return kept, dropped
+
+
+def _token_in_names(ex: Example, token: str) -> bool:
+    """True iff ``token`` appears inside any tagged name span of ``ex``."""
+    names = " ".join(s.text for s in ex.name_spans()).lower()
+    return token.lower() in names
+
+
 def build_dataset(
     cfg: DatagenConfig,
     teacher: TeacherGenerator,
@@ -108,10 +132,13 @@ def build_dataset(
     raw: list[Example] = []
     verifier_targets: list[str | None] = []
     rng = random.Random(cfg.seed)
+    n_disposition = 0
 
     # 1) matched minimal pairs — person [tagged] vs identical non-person [untagged]. Tokens come
     #    from the curated, eval-DISJOINT bank; possessive pairs contrast a person's possessive
-    #    with an eponymous possessive negative (distinct eponym token).
+    #    with an eponymous possessive negative (distinct eponym token). Disposition is enforced:
+    #    the person half must tag its own token; the non-person half must tag NOTHING (a clean
+    #    withhold, and no stray famous-name that could leak an eval surface). Bad pairs are dropped.
     for category, n_pairs in cfg.minimal_pairs.items():
         tokens = list(vocab.tokens_for(category))
         if not tokens:
@@ -122,12 +149,17 @@ def build_dataset(
         for i in range(_scaled(n_pairs, cfg.scale)):
             person_token = tokens[i % len(tokens)]
             nonperson_token = eponyms[i % len(eponyms)] if category == "possessive" else None
+            register = "dialogue" if i % 3 == 0 else "essay"
             person, nonperson = teacher.generate_pair(
                 category,
                 person_token=person_token,
                 nonperson_token=nonperson_token,
+                register=register,
                 id_prefix=f"pair-{category}-{i:04d}",
             )
+            if not _token_in_names(person, person_token) or nonperson.name_spans():
+                n_disposition += 2  # drop the whole pair; keep only clean matched contrast
+                continue
             for ex in (person, nonperson):
                 raw.append(ex)
                 verifier_targets.append(teacher.verify_tagging(ex.input))
@@ -135,7 +167,8 @@ def build_dataset(
     # 2) teacher-distilled single passages per category (context variety)
     for category, count in cfg.category_counts.items():
         for i in range(_scaled(count, cfg.scale)):
-            ex = teacher.generate(category, id_=f"gen-{category}-{i:04d}")
+            register = "dialogue" if i % 3 == 0 else "essay"
+            ex = teacher.generate(category, register=register, id_=f"gen-{category}-{i:04d}")
             raw.append(ex)
             verifier_targets.append(teacher.verify_tagging(ex.input))
 
@@ -148,10 +181,14 @@ def build_dataset(
     # 4) quality gate (incl. Day-4 category-semantics)
     kept, drops = filter_examples(raw, verifier_targets)
 
-    # 5) eval-leakage (hard ceiling): token-level guard THEN passage-level de-leak + split
+    # 5) eval-leakage (hard ceiling): intended-token guard -> passage-surface guard (any eval
+    #    surface anywhere) -> exact-passage de-leak + split
     kept, n_token_leak = drop_eval_token_overlap(kept, cfg.eval_dir)
+    kept, n_surface_leak = drop_eval_surface_overlap(kept)
     train, val, n_leak = deleak_and_split(kept, cfg.eval_dir, cfg.val_frac, cfg.seed)
+    drops["pair_disposition"] = n_disposition
     drops["eval_token_leak"] = n_token_leak
+    drops["eval_surface_leak"] = n_surface_leak
     drops["eval_leak"] = n_leak
     return train, val, drops
 

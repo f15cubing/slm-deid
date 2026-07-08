@@ -11,6 +11,7 @@ from src.datagen.generate import (
     DatagenConfig,
     build_dataset,
     deleak_and_split,
+    drop_eval_surface_overlap,
     drop_eval_token_overlap,
     write_splits,
 )
@@ -19,8 +20,9 @@ from src.datagen.teacher import TeacherGenerator
 
 def _mock_teacher():
     # Deterministic teacher: always returns the same well-formed tagged passage, and a verifier
-    # that agrees. build_dataset should gate it in and split it.
-    passage = f"{tags.wrap('Grace')} lent me her notes, but she showed grace under pressure."
+    # that agrees. build_dataset should gate it in and split it. Uses "Joy" (a bank token, NOT an
+    # eval surface) so the passage-level eval-surface guard doesn't (correctly) drop it.
+    passage = f"{tags.wrap('Joy')} lent me her notes, but she still felt joy under pressure."
     return TeacherGenerator(gen=lambda s, u: passage, verify=lambda s, u: passage)
 
 
@@ -101,6 +103,47 @@ def test_token_leak_guard_drops_eval_token_overlap(tmp_path):
     kept, dropped = drop_eval_token_overlap([leak, clean], eval_dir=str(tmp_path / "eval"))
     assert dropped == 1
     assert [e.id for e in kept] == ["ok"]
+
+
+def test_surface_guard_drops_any_eval_surface_in_passage():
+    # Day-4 hardening: a passage that tags a famous person whose surname is an eval token
+    # ("Darwin") is dropped even though the intended ambiguous_token ("Sydney") is clean —
+    # the intended-token-only guard would miss it.
+    leak = Example(
+        id="leak", input="Charles Darwin sailed on the Beagle to Sydney.",
+        target=f"{tags.wrap('Charles Darwin')} sailed on the Beagle to Sydney.",
+        spans=[Span(0, 14, "Charles Darwin", True)], category="person_vs_place",
+        source="synthetic_teacher", ambiguous_token="Sydney",
+    ).validate()
+    clean = Example(
+        id="ok", input="Austin sailed on the Beagle to the harbor.",
+        target=f"{tags.wrap('Austin')} sailed on the Beagle to the harbor.",
+        spans=[Span(0, 6, "Austin", True)], category="person_vs_place",
+        source="synthetic_teacher", ambiguous_token="Austin",
+    ).validate()
+    kept, dropped = drop_eval_surface_overlap([leak, clean])
+    assert dropped == 1
+    assert [e.id for e in kept] == ["ok"]
+
+
+def test_minimal_pair_disposition_drops_bad_pairs():
+    # Non-person half tags a stray name (should withhold) -> the whole pair is dropped on
+    # disposition, before the gate, and counted.
+    def gen(system, user):
+        token = re.search(r'"([^"]+)"', user).group(1)
+        sense = "person" if "SENSE=person" in user else "nonperson"
+        if sense == "person":
+            return f"{tags.wrap(token)} explained the topic clearly after class."
+        return f"We toured {token}, guided by {tags.wrap('Guide')} the whole afternoon."
+
+    teacher = TeacherGenerator(gen=gen, verify=None)
+    cfg = DatagenConfig(
+        minimal_pairs={"person_vs_place": 3}, category_counts={}, negatives=0,
+        seed=0, val_frac=0.0, eval_dir="___nodir___",
+    )
+    train, val, drops = build_dataset(cfg, teacher)
+    assert len(train) + len(val) == 0
+    assert drops.get("pair_disposition") == 6  # 3 pairs x 2 examples
 
 
 def _pair_mock_teacher():

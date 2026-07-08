@@ -32,3 +32,12 @@ def test_bank_excludes_every_blocklisted_token():
 def test_every_targeted_category_has_tokens():
     for category in ("person_vs_place", "person_vs_common", "person_vs_eponym", "possessive"):
         assert vocab.tokens_for(category), f"no bank tokens for {category}"
+
+
+def test_blocklist_surfaces_in_flags_eval_names_anywhere():
+    # the "Charles Darwin" hole: an eval surface must be detected anywhere in a passage, even when
+    # it is not the intended ambiguous token.
+    assert "darwin" in vocab.blocklist_surfaces_in("Charles Darwin studied finches for years.")
+    assert "red cross" in vocab.blocklist_surfaces_in("The Red Cross ran a first-aid workshop.")
+    # a clean passage built only from bank tokens flags nothing
+    assert vocab.blocklist_surfaces_in("Austin met Sydney near the harbor in Savannah.") == set()
