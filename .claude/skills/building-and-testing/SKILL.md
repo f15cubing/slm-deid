@@ -44,7 +44,7 @@ must. On the Mac, prefix runs with `PYTORCH_ENABLE_MPS_FALLBACK=1` so any op MPS
 > the pipeline lands (Days 2–3) and mark verified once each runs green.
 
 ## The eval must exist before training
-Per the hard ceilings (`AGENTS.md`): do not run the train command until the eval command and the
+Per the hard ceilings (`CLAUDE.md`): do not run the train command until the eval command and the
 behavioral-check tests exist and pass. `docs/STATUS.md` should show the eval harness as Done first.
 
 ## Don't recompute from zero (if runs are slow)

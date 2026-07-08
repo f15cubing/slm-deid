@@ -29,8 +29,8 @@ and negative traps.
 | `docs/plan.md` | The one-week build plan (Mon Jul 6 → Sun Jul 12). |
 | `docs/STATUS.md` | Live "what's done / in-flight / next". Updated on every merge. |
 | `docs/agent-workflow-starter-kit.md` | The multi-agent workflow reference this repo's process is built on. |
-| `AGENTS.md` | Always-loaded agent rules: hard ceilings + skill routing. |
-| `.cursor/skills/` | Project skills: `shipping-changes`, `building-and-testing`. |
+| `CLAUDE.md` | Always-loaded agent rules: hard ceilings + skill routing. |
+| `.claude/skills/` | Project skills: `shipping-changes`, `building-and-testing`. |
 
 ## Getting started
 
@@ -46,6 +46,6 @@ pip install -r requirements.txt
 - **Colab / CUDA:** 4-bit QLoRA via Unsloth with `configs/train.yaml`. `unsloth`/`bitsandbytes` are
   Linux-gated in `requirements.txt`, so a Mac `pip install` skips them.
 
-Exact build / run / train / eval commands live in `.cursor/skills/building-and-testing/SKILL.md`.
+Exact build / run / train / eval commands live in `.claude/skills/building-and-testing/SKILL.md`.
 
-See `docs/plan.md` for the day-by-day arc and `AGENTS.md` for how to ship changes here.
+See `docs/plan.md` for the day-by-day arc and `CLAUDE.md` for how to ship changes here.
