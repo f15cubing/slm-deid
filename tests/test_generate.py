@@ -227,6 +227,21 @@ def test_build_dataset_folds_in_crapii_slice(tmp_path):
         e.validate()
 
 
+def test_load_dotenv_tolerates_spacing(tmp_path, monkeypatch):
+    from src.datagen.generate import _load_dotenv
+
+    envf = tmp_path / ".env"
+    envf.write_text('# c\nOPENAI_API_KEY = spaced \nKAGGLE_KEY ="quoted"\nBAR=plain\n', "utf-8")
+    for k in ("OPENAI_API_KEY", "KAGGLE_KEY", "BAR"):
+        monkeypatch.delenv(k, raising=False)
+    _load_dotenv(str(envf))
+    import os as _os
+
+    assert _os.environ["OPENAI_API_KEY"] == "spaced"
+    assert _os.environ["KAGGLE_KEY"] == "quoted"
+    assert _os.environ["BAR"] == "plain"
+
+
 def test_write_splits(tmp_path):
     cfg = DatagenConfig(category_counts={"easy": 4}, negatives=0, seed=2, val_frac=0.5)
     train, val, _ = build_dataset(cfg, _mock_teacher())

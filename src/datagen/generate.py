@@ -12,6 +12,7 @@ and builds a real teacher via the lazy OpenAI/Anthropic factories in `src.eval.j
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import re
 from dataclasses import dataclass, field
@@ -228,6 +229,24 @@ def _load_yaml(path: str) -> DatagenConfig:
     return DatagenConfig(**d)
 
 
+def _load_dotenv(path: str = ".env") -> None:
+    """Load ``KEY=VALUE`` lines from ``.env`` into the environment (tolerant of spacing/quotes).
+
+    Keeps credential handling inside the process rather than relying on shell ``source .env``,
+    which breaks on entries like ``KAGGLE_KEY = ...`` (spaces around ``=``). Never overrides an
+    already-set variable.
+    """
+    p = Path(path)
+    if not p.exists():
+        return
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/datagen.yaml")
@@ -235,6 +254,7 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = _load_yaml(args.config)
+    _load_dotenv()  # load OPENAI_API_KEY (and any KAGGLE_* creds) without relying on shell `source`
 
     from src.eval.judge import build_anthropic_complete, build_openai_complete
 
