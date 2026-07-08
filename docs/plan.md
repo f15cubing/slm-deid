@@ -35,7 +35,10 @@ stretch rung, so the core stays narrow.)*
 
 **Tag syntax decision (Day 1):** primary = `⟨NAME⟩…⟨/NAME⟩` (matches the spec above). `@@…##`
 (GPT-NER style) is the fallback if the tokenizer handles it more cleanly — decide after eyeballing a
-serialized example.
+serialized example. **Decided:** kept `⟨NAME⟩…⟨/NAME⟩` for collision-safety even though it fragments
+on Qwen3's byte-level BPE (OPEN=3 / CLOSE=4 tokens → 8 per span, vs `@@…##`'s 3); the round-trip is
+lossless so integrity holds. Now pinned by `tests/test_tag_tokenization.py`. A single-token variant
+(markers as *added* special tokens) is a v-next A/B on the stretch ladder.
 
 ---
 
@@ -186,3 +189,7 @@ training data).
 2. **Adversarial eval** (Day 6) — robustness under attack.
 3. **Composed behavior** (if time) — add a second constraint (ADDRESS tagging, or consistent surrogate
    replacement) and show the model holds **both** without degrading name judgment.
+4. **Single-token tags A/B** — register `⟨NAME⟩`/`⟨/NAME⟩` as *added* special tokens (1 token each vs
+   8 per span on Qwen3 BPE) with `embed_tokens` + `lm_head` in `modules_to_save`; measure malformed-tag
+   rate, integrity, and token cost against the current scheme. Tokenization reality is pinned by
+   `tests/test_tag_tokenization.py`; current call is collision-safety over efficiency (see Day-1 decision).

@@ -69,5 +69,8 @@ _Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned number
   (0.37) and the integrity regression (0.12), then retrain + re-measure on those categories. Scale v1
   toward 800–2,000. (Bootstrap CIs S3.5 — done; see Done.) Do NOT touch lr/r/epochs to mask the
   over-tagging.
+- **Backlog (v-next):** single-token tag scheme A/B — `⟨NAME⟩` tags fragment to 8 tokens/span on
+  Qwen3 BPE (kept for collision-safety; now pinned by `tests/test_tag_tokenization.py`). Test
+  registering the markers as *added* special tokens (1 token each) — see the `docs/plan.md` stretch ladder.
 
 _Note: the prompted base already handled the Day-1 sanity case ("Newton" the person). The real test is the Day-2 hard-cases set (the Newton method, Chelsea the place, first-name-only) — that's where the base is expected to wobble and the fine-tune to hold._

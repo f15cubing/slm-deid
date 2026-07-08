@@ -18,6 +18,10 @@ from dataclasses import dataclass
 # --- The locked syntax (decision recorded in docs/tasks/day-1.md) -----------------------
 # Primary: mathematical angle brackets U+27E8 / U+27E9. These are single codepoints, so they
 # never collide with the ASCII ``<`` / ``>`` a student might type in prose or code.
+# NB: a single codepoint is NOT a single token. On Qwen3's byte-level BPE these markers FRAGMENT
+# (OPEN=3 / CLOSE=4 tokens; 8 per tagged span) and are not special tokens — a deliberate
+# collision-safety-over-efficiency trade. Integrity still holds (lossless round-trip). Pinned by
+# tests/test_tag_tokenization.py; the 1-token variant (added special tokens) is a v-next A/B.
 NAME_OPEN = "\u27e8NAME\u27e9"      # ⟨NAME⟩
 NAME_CLOSE = "\u27e8/NAME\u27e9"    # ⟨/NAME⟩
 
