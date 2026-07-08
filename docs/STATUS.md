@@ -25,6 +25,16 @@ _Last updated: 2026-07-07 — Day 2 DONE (eval-before-train gate + smoke loop ve
   Full generate→train→eval loop verified end-to-end on Colab T4 (`notebooks/day2_smoke.ipynb`).
   Eval-before-training gate satisfied. Base already shows the target gap (over-tags on ambiguous cases).
 
+- **Mac/MPS training backend added** (`agent/train-mps-backend`). `src/common/device.py` auto-selects
+  `unsloth` (CUDA) or `hf` (Apple-Silicon MPS: transformers + PEFT LoRA, `adamw_torch`); adds
+  `configs/train.mps.yaml` (base `Qwen/Qwen3-1.7B`, fp16) and Linux-gates `unsloth`/`bitsandbytes` in
+  `requirements.txt`. The Colab/Unsloth path is unchanged as the documented fallback. Trade-off: the Mac
+  path is plain LoRA on an fp16 base (not 4-bit QLoRA), so its base-vs-tuned numbers re-baseline against
+  the Colab 4-bit run rather than reusing them. Smoke-verified on Apple M-series (MPS): a 1-epoch LoRA
+  step (finite loss, no NaN) → save adapter → base-vs-tuned eval runs end-to-end on `mps` via a tiny
+  hand-built dataset (the `generate` step still needs a teacher API key). New unit tests: `test_device.py`
+  (7), `test_qlora_backend.py` (4).
+
 ## In flight
 - **[Day 3](tasks/day-3.md)** — CRAPII loader (`src/datagen/real_data.py`, JSONL + NAME/NAME_STUDENT)
   + `deleak_and_split` helper built & tested (74 tests). `notebooks/day3_dataset_train_eval.ipynb`

@@ -17,6 +17,16 @@ pip install -r requirements.txt
 > Status: NOT yet verified on this machine — resolve on first run (Day 1). Pin exact versions once the
 > GPU environment is stood up.
 
+### Backends: Colab/CUDA vs Mac/MPS
+Training and inference auto-select a backend by hardware (`src/common/device.py`): `unsloth` (4-bit
+QLoRA) when a CUDA GPU is present, else `hf` (plain LoRA via transformers + PEFT on the `mps` device).
+`unsloth`/`bitsandbytes` are CUDA-only and Linux-gated in `requirements.txt`, so on a Mac
+`pip install -r requirements.txt` installs the MPS stack (torch, transformers, trl, peft, datasets)
+and skips the CUDA-only packages. No flag needed; override with `--backend` / config `backend:` if you
+must. On the Mac, prefix runs with `PYTORCH_ENABLE_MPS_FALLBACK=1` so any op MPS lacks falls back to CPU.
+> Verified on Apple M-series (MPS): the 1-epoch train -> save adapter -> base-vs-tuned eval loop runs
+> end-to-end on `mps`. Note: GPU access is blocked under sandboxing — run training/eval unsandboxed.
+
 ## Commands (fill real paths as the pipeline is built)
 
 | Goal | Command |
@@ -25,7 +35,8 @@ pip install -r requirements.txt
 | Run all tests | `pytest -q` |
 | Run behavioral-check tests only | `pytest tests/test_behavioral_checks.py -q` |
 | Generate dataset | `python -m src.datagen.generate --config configs/datagen.yaml` |
-| QLoRA train | `python -m src.train.qlora --config configs/train.yaml` |
+| QLoRA train (Colab/CUDA) | `python -m src.train.qlora --config configs/train.yaml` |
+| LoRA train (Mac/MPS) | `PYTORCH_ENABLE_MPS_FALLBACK=1 python -m src.train.qlora --config configs/train.mps.yaml` |
 | Eval (base vs. tuned, hard cases) | `python -m src.eval.run --split eval/hardcases --model <base|tuned>` |
 | Inference demo | `python -m src.demo` |
 

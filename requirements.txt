@@ -1,12 +1,14 @@
 # Core training stack (QLoRA fine-tuning of Qwen3-1.7B)
 # Pin exact versions on Day 1 once the GPU environment is stood up.
-unsloth
+# unsloth + bitsandbytes are CUDA-only; on macOS the hf/MPS backend is used instead, so they are
+# gated to Linux (Colab) and skipped by `pip install -r requirements.txt` on a Mac.
+unsloth; platform_system == "Linux"
 transformers>=4.44
 datasets>=2.20
 trl>=0.9
 peft>=0.12
 accelerate>=0.33
-bitsandbytes>=0.43
+bitsandbytes>=0.43; platform_system == "Linux"
 torch>=2.3
 
 # Data-gen teacher client (frontier model distillation) — pick one

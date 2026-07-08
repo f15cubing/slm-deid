@@ -125,6 +125,12 @@ def main() -> None:
     ap.add_argument("--label", default=None, help="report label (default: base/tuned)")
     ap.add_argument("--compare", nargs="+", default=None, help="two+ model ids to compare")
     ap.add_argument("--report-dir", default="data/eval_reports")
+    ap.add_argument(
+        "--backend", default=None, help="force 'hf' or 'unsloth' (default: auto-detect)"
+    )
+    ap.add_argument(
+        "--base-model", default=None, help="base model repo/path (default: backend canonical base)"
+    )
     args = ap.parse_args()
 
     examples = _load_examples(args.split)
@@ -133,7 +139,10 @@ def main() -> None:
     model_ids = args.compare if args.compare else [args.model]
     reports: list[EvalReport] = []
     for mid in model_ids:
-        tagger = load_hf_tagger() if mid == "base" else load_hf_tagger(adapter=mid)
+        adapter = None if mid == "base" else mid
+        tagger = load_hf_tagger(
+            model_name=args.base_model, adapter=adapter, backend=args.backend
+        )
         label = args.label if (args.label and len(model_ids) == 1) else tagger.name
         report = evaluate(tagger, examples, label=label)
         path = write_report(report, args.report_dir)
