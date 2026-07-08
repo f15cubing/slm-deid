@@ -16,7 +16,8 @@ quarantined hard cases are on the board** (the midweek gate).
 - **S3.3 No leakage.** `tests/test_no_eval_leakage.py` passes against the final train split.
 - **S3.4 Training run.** `python -m src.train.qlora --config configs/train.yaml` with **r=32, α=32,
   lr=2e-4, seq_len=2048, 2–3 epochs, completion-only masking, non-thinking**; produces an adapter
-  under `outputs/sft-v1/` and a training log (loss curve) without OOM on a 24GB card.
+  under `outputs/sft-v1/` and a training log (loss curve) without OOM on a 24GB card. *(Mac/MPS:
+  `--config configs/train.mps.yaml` → adapter under `outputs/sft-v1-mps/`; same hyperparameters.)*
 - **S3.5 First numbers.** `src/eval/run.py` produces a **base vs. SFT-v1** results table on
   `eval/hardcases` across all metrics (entity P/R/F5, leakage rate, over-tag rate, integrity,
   consistency) with per-category rows and **bootstrap CIs**; saved to `data/eval_reports/` and copied
@@ -27,7 +28,7 @@ quarantined hard cases are on the board** (the midweek gate).
 - [ ] Run the quality gate; log kept/dropped counts and the drop reasons — S3.2.
 - [ ] Build the train/val split (leakage-safe: a paraphrase group / faker template stays in one fold).
 - [ ] Run `test_no_eval_leakage.py` on the final split — S3.3.
-- [ ] Fill `configs/train.yaml` with the hyperparameters (S3.4); run the first real QLoRA train.
+- [ ] Fill `configs/train.yaml` (Colab) / use `configs/train.mps.yaml` (Mac) — same hyperparameters (S3.4); run the first real train.
 - [ ] Run `eval/run.py --model base` and `--model outputs/sft-v1` on the hard cases — S3.5.
 - [ ] Write `docs/results.md` with the base-vs-SFT-v1 table + a 3-sentence read of the delta.
 

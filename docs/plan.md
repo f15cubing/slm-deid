@@ -82,6 +82,8 @@ training data).
 ## Day 1 — Mon Jul 6: Setup, scope lock, BrainLift confirm
 - **Environment:** stand up Unsloth + `Qwen/Qwen3-1.7B` (or `unsloth/Qwen3-1.7B-unsloth-bnb-4bit`) on
   your GPU (Colab/Modal/RunPod A100, or a local 24GB card). Run one inference call; confirm it responds.
+  *(Update: local Apple-Silicon Macs now train via the `hf`/MPS backend — `configs/train.mps.yaml`; the
+  Unsloth/CUDA path stays the fallback. Backend auto-selects by hardware.)*
 - **Chat template:** verify **non-thinking mode** (`enable_thinking=False`, empty-`<think>` template)
   and completion-only masking behavior. Serialize one example and eyeball it.
 - **Scope lock:** confirm the mandate = context-sensitive NAME judgment (BrainLift v3 already encodes
@@ -114,7 +116,7 @@ training data).
   model learns *not* to tag emails/phones — those aren't its job) + entity-swap augmentation + a
   **small real slice** (CRAPII/TSCC). Weight heavily toward the hard ambiguous name cases.
 - **First real QLoRA run:** r=32/α=32, lr 2e-4, seq 2048, 2–3 epochs, completion-only, non-thinking.
-  (Minutes on a 24GB card.)
+  (Minutes on a 24GB CUDA card; ~1–2 hr locally on Apple-Silicon MPS via `configs/train.mps.yaml`.)
 - **First base-vs-tuned eval** on the held-out hard-cases set. Put the numbers on the board.
 - **Midweek gate:** base-vs-tuned numbers exist. If the tuned model already clearly beats prompting on
   the ambiguous cases, the core thesis is validated early.

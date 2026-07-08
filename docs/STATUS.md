@@ -3,7 +3,7 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-07 — Day 2 DONE (eval-before-train gate + smoke loop verified on Colab)._
+_Last updated: 2026-07-07 — Day 2 DONE; Mac/MPS training backend merged (PR #1). Up next: Day 3 midweek gate (first real dataset → first base-vs-tuned numbers)._
 
 ## Done
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
@@ -25,7 +25,7 @@ _Last updated: 2026-07-07 — Day 2 DONE (eval-before-train gate + smoke loop ve
   Full generate→train→eval loop verified end-to-end on Colab T4 (`notebooks/day2_smoke.ipynb`).
   Eval-before-training gate satisfied. Base already shows the target gap (over-tags on ambiguous cases).
 
-- **Mac/MPS training backend added** (`agent/train-mps-backend`). `src/common/device.py` auto-selects
+- **Mac/MPS training backend added** (merged, PR #1). `src/common/device.py` auto-selects
   `unsloth` (CUDA) or `hf` (Apple-Silicon MPS: transformers + PEFT LoRA, `adamw_torch`); adds
   `configs/train.mps.yaml` (base `Qwen/Qwen3-1.7B`, fp16) and Linux-gates `unsloth`/`bitsandbytes` in
   `requirements.txt`. The Colab/Unsloth path is unchanged as the documented fallback. Trade-off: the Mac
@@ -39,7 +39,8 @@ _Last updated: 2026-07-07 — Day 2 DONE (eval-before-train gate + smoke loop ve
 - **[Day 3](tasks/day-3.md)** — CRAPII loader (`src/datagen/real_data.py`, JSONL + NAME/NAME_STUDENT)
   + `deleak_and_split` helper built & tested (74 tests). `notebooks/day3_dataset_train_eval.ipynb`
   ready: CRAPII slice + Faker negatives (+ optional teacher synthetic) → real QLoRA (3 epochs) →
-  base-vs-tuned on the quarantined hard cases. **Run it on Colab (GPU) for the midweek gate numbers.**
+  base-vs-tuned on the quarantined hard cases. **Runnable locally on the Mac (MPS,
+  `configs/train.mps.yaml`; base model now cached) or on Colab (CUDA) — get the midweek-gate numbers.**
 
 ## Next  — per `docs/tasks/`
 - **[Day 3](tasks/day-3.md):** generate & filter the real v1 dataset (800–2,000) with a teacher API

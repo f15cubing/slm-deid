@@ -35,6 +35,7 @@ src/
   common/
     tags.py            # tag constants + wrap/unwrap; the ONE place the tag syntax lives
     schema.py          # Example / Span dataclasses + JSONL (de)serialization + validation
+    device.py          # backend (unsloth/hf) + device (cuda/mps/cpu) auto-selection
     io.py              # load/save JSONL, split helpers
   datagen/
     generate.py        # entrypoint: python -m src.datagen.generate --config configs/datagen.yaml
@@ -54,7 +55,7 @@ src/
   infer.py             # single-passage tag() used by eval + demo
   demo.py              # entrypoint: python -m src.demo  (ambiguous-passage showcase)
 configs/
-  datagen.yaml  train.yaml  dpo.yaml
+  datagen.yaml  train.yaml  train.mps.yaml  dpo.yaml
 eval/
   hardcases/           # QUARANTINED held-out eval set (JSONL). NEVER fed to datagen/train.
   adversarial/         # QUARANTINED break-it set (Day 6).
