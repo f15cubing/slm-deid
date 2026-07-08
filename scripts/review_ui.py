@@ -32,7 +32,12 @@ sys.path.insert(0, str(REPO))
 from src.common import schema, tags  # noqa: E402
 
 # Directories we scan for reviewable splits, relative to the repo root.
-SCAN_GLOBS = ["data/splits/*.jsonl", "eval/**/*.jsonl", "data/raw/*.jsonl"]
+SCAN_GLOBS = [
+    "data/splits/*.jsonl",
+    "eval/**/*.jsonl",
+    "data/raw/*.jsonl",
+    "data/cooccur/*.jsonl",
+]
 
 
 def discover_files() -> list[dict]:
