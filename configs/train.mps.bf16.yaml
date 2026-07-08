@@ -1,0 +1,33 @@
+# LoRA training config for Apple Silicon (PyTorch MPS + PEFT). Mac-local counterpart of
+# configs/train.yaml (Colab/CUDA). Plain LoRA on a full-precision base (no bitsandbytes 4-bit).
+#
+# LoRA hyperparameters MUST stay identical to configs/train.yaml so base-vs-tuned stays comparable
+# across backends (Day 4 rule: fix data, not hyperparameters). Only backend/base/dtype/batch differ.
+backend: hf
+base_model: Qwen/Qwen3-1.7B     # full-precision (bnb-4bit repos are rejected on the hf backend)
+dtype: bfloat16                # fp16 NaN-overflowed on v2; bf16 = fp32 range, ~2x faster than fp32 on MPS
+max_seq_len: 2048
+
+# LoRA (matches configs/train.yaml)
+lora_r: 32
+lora_alpha: 32
+lora_dropout: 0.0
+target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+# Optimization (matches configs/train.yaml; effective batch = 2 x 8 = 16, same as Colab)
+learning_rate: 2.0e-4
+num_train_epochs: 3
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+warmup_ratio: 0.05
+lr_scheduler_type: linear
+weight_decay: 0.01
+seed: 0
+
+# Data / masking
+train_path: data/splits/train.jsonl
+val_path: data/splits/val.jsonl
+completion_only: true      # mask the prompt; loss only on the tagged completion
+enable_thinking: false
+
+output_dir: outputs/sft-v1-mps

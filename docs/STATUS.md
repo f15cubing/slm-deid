@@ -3,7 +3,7 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned numbers: F5 0.19→0.61, leakage halved; over-tagging is the Day-4 data-fix target). Trained locally on MPS._
+_Last updated: 2026-07-08 — Day 4 v2 retrain + re-eval DONE (on branch `agent/datagen-v2-run`, unmerged): over_tag 0.37→0.137, integrity 0.118→0.020, pass 0.549→0.627; consistency regressed 0.25→0.125. Trained bf16 on MPS (fp16 NaN'd on the long CRAPII passages)._
 
 ## Done
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
@@ -52,6 +52,15 @@ _Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned number
   pass>0.
 
 ## In flight
+- **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
+  (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
+  base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020
+  (below base), pass 0.549→0.627**; recall 0.185→0.444, F5 0.190→0.450, leakage 0.412→0.275. Honest
+  regressions: **consistency 0.25→0.125**, `person_vs_common` recall flat at 0.125. Methodology note:
+  fp16 (the documented MPS default) NaN-diverged on the long CRAPII passages, so v2 is a **bf16
+  re-baseline** (bf16 base reproduces the Day-3 fp16 base, so the comparison holds). Model card:
+  `docs/model-card-v2.md`; numbers: `docs/results.md` → v2; adapter + provenance: `outputs/sft-v2-mps/`.
+  Not yet shipped (needs high-risk-lane review before merge).
 - **[Day 4] PR `agent/datagen-minpairs-gate` (high-risk, in review)** — data-iteration machinery to fix
   the Day-3 over-tagging (over_tag 0.10→0.37). Adds: matched **minimal-pair** teacher generation
   (`teacher.generate_pair`) + an eval-**disjoint** vocab bank (`src/datagen/vocab.py`) whose hints no
