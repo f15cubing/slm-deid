@@ -42,6 +42,6 @@ eval_dir: eval       # used ONLY for the leakage guards (token + passage); never
 # Not committed. Provide the file (Kaggle/Zenodo download) at data/raw/crapii.jsonl, then set
 # crapii_path below. Routed through the same quality gate + leakage guards; kept SMALL because
 # NAME_STUDENT under-tags non-student names (see src/datagen/real_data.py caveat).
-crapii_path: null
-crapii_limit: 80
-crapii_max_chars: 2000
+crapii_path: data/raw/cleaned_repository_pii_train.json
+crapii_limit: 120
+crapii_max_chars: 3000
