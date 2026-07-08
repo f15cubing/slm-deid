@@ -2,7 +2,7 @@
 
 Fails if any quarantined eval input also appears in a training split. Also asserts the eval set
 itself is schema-valid and flagged quarantine=true. This is the automated enforcement of the
-AGENTS.md ceiling "never leak the eval set into data generation or training".
+CLAUDE.md ceiling "never leak the eval set into data generation or training".
 """
 
 import re
