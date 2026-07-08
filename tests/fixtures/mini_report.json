@@ -1,0 +1,94 @@
+{
+  "label": "fixture",
+  "n": 4,
+  "overall": {
+    "n": 4,
+    "precision": 1.0,
+    "recall": 0.6667,
+    "f5": 0.6753,
+    "leakage_rate": 0.25,
+    "over_tag_rate": 0.0,
+    "integrity_violation_rate": 0.0,
+    "pass_rate": 0.75,
+    "consistency": null
+  },
+  "by_category": {
+    "person_vs_common": {
+      "n": 2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f5": 1.0,
+      "leakage_rate": 0.0,
+      "over_tag_rate": 0.0,
+      "integrity_violation_rate": 0.0,
+      "pass_rate": 1.0,
+      "consistency": null
+    },
+    "easy": {
+      "n": 2,
+      "precision": 1.0,
+      "recall": 0.5,
+      "f5": 0.5098,
+      "leakage_rate": 0.5,
+      "over_tag_rate": 0.0,
+      "integrity_violation_rate": 0.0,
+      "pass_rate": 0.5,
+      "consistency": null
+    }
+  },
+  "judge_summary": null,
+  "outputs": [
+    {
+      "id": "c1",
+      "category": "person_vs_common",
+      "input": "Grace lent me notes.",
+      "output": "⟨NAME⟩Grace⟨/NAME⟩ lent me notes.",
+      "pass": true,
+      "leaked": false,
+      "over_tagged": false,
+      "integrity_ok": true,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    {
+      "id": "c2",
+      "category": "person_vs_common",
+      "input": "handled with grace",
+      "output": "handled with grace",
+      "pass": true,
+      "leaked": false,
+      "over_tagged": false,
+      "integrity_ok": true,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    {
+      "id": "e1",
+      "category": "easy",
+      "input": "Dear Mr. Johnson,",
+      "output": "Dear Mr. ⟨NAME⟩Johnson⟨/NAME⟩,",
+      "pass": true,
+      "leaked": false,
+      "over_tagged": false,
+      "integrity_ok": true,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    {
+      "id": "e2",
+      "category": "easy",
+      "input": "Ada coded.",
+      "output": "Ada coded.",
+      "pass": false,
+      "leaked": true,
+      "over_tagged": false,
+      "integrity_ok": true,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1
+    }
+  ]
+}
