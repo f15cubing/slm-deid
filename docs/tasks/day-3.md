@@ -37,7 +37,13 @@ quarantined hard cases are on the board** (the midweek gate).
 - `outputs/sft-v1/` adapter + training log.
 - `docs/results.md` with the first base-vs-tuned table.
 
-## Checkpoint (hard gate — MIDWEEK GATE)
+## Checkpoint (hard gate — MIDWEEK GATE) — ✅ MET (2026-07-07)
 Base-vs-tuned numbers exist on the quarantined hard cases. If tuned clearly beats prompting on the
 ambiguous cases, the core thesis (SPOV 7) is validated early. **If it doesn't**, treat it as a real
 signal: investigate **data quality first** (per the falsifiable-bet rule) before anything else.
+
+**Result:** tuned beats base on the recall/F5 axis (F5 0.19→0.61, recall 0.19→0.63, leakage 0.41→0.20)
+at a precision cost (over-tag 0.10→0.37) — SPOV-7 validated on recall/leakage; over-tagging is the Day-4
+data-fix target (concentrated in `person_vs_place`/`person_vs_common`, which v1 under-covered). Full
+table + read: [`docs/results.md`](../results.md). Trained + evaluated locally on Apple MPS.
+_(Note: S3.5 bootstrap CIs deferred to Day 4; v1 was ~300 teacher examples time-boxed under 2h, not the full 800–2,000.)_

@@ -3,7 +3,7 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-07 — Day 2 DONE; Mac/MPS training backend merged (PR #1). Up next: Day 3 midweek gate (first real dataset → first base-vs-tuned numbers)._
+_Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned numbers: F5 0.19→0.61, leakage halved; over-tagging is the Day-4 data-fix target). Trained locally on MPS._
 
 ## Done
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
@@ -35,15 +35,21 @@ _Last updated: 2026-07-07 — Day 2 DONE; Mac/MPS training backend merged (PR #1
   hand-built dataset (the `generate` step still needs a teacher API key). New unit tests: `test_device.py`
   (7), `test_qlora_backend.py` (4).
 
+- **[Day 3](tasks/day-3.md) — MIDWEEK GATE MET.** v1 dataset (146 train/16 val; teacher 54% quality-gate
+  drop, `eval_leak=0`) → LoRA on MPS (`train_loss 0.131`) → base-vs-tuned on the 51 quarantined hard cases.
+  **F5 0.19→0.61, recall 0.19→0.63, leakage 0.41→0.20** (recall/F5 win — SPOV-7 validated), but
+  **over-tag 0.10→0.37** (precision cost) so pass-rate is flat. Over-tagging concentrates where v1 data was
+  thin/absent (`person_vs_place` had 0 train examples). Full table + honest read: `docs/results.md`. All
+  local on Apple MPS.
+
 ## In flight
-- **[Day 3](tasks/day-3.md)** — CRAPII loader (`src/datagen/real_data.py`, JSONL + NAME/NAME_STUDENT)
-  + `deleak_and_split` helper built & tested (74 tests). `notebooks/day3_dataset_train_eval.ipynb`
-  ready: CRAPII slice + Faker negatives (+ optional teacher synthetic) → real QLoRA (3 epochs) →
-  base-vs-tuned on the quarantined hard cases. **Runnable locally on the Mac (MPS,
-  `configs/train.mps.yaml`; base model now cached) or on Colab (CUDA) — get the midweek-gate numbers.**
+- (none — Day 3 gate met; ready for Day 4.)
 
 ## Next  — per `docs/tasks/`
-- **[Day 3](tasks/day-3.md):** generate & filter the real v1 dataset (800–2,000) with a teacher API
-  key; first real QLoRA run (3 epochs); first meaningful base-vs-tuned numbers (midweek gate).
+- **[Day 4](tasks/day-4.md) — fix in data, not hyperparameters:** generate targeted
+  `person_vs_place` / `person_vs_common` / `possessive` / eponym-negative examples (and optionally fold in
+  the already-built CRAPII real slice, `src/datagen/real_data.py`) to cut the tuned model's over-tagging
+  (0.37), then retrain + re-measure on those categories. Scale v1 toward 800–2,000; add bootstrap CIs to
+  the eval report (S3.5; eval-harness = high-risk lane). Do NOT touch lr/r/epochs to mask the over-tagging.
 
 _Note: the prompted base already handled the Day-1 sanity case ("Newton" the person). The real test is the Day-2 hard-cases set (the Newton method, Chelsea the place, first-name-only) — that's where the base is expected to wobble and the fine-tune to hold._
