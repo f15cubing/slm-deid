@@ -89,13 +89,15 @@ def _pair_user(token: str, category: str, register: str, sense: str) -> str:
     """
     if sense == "person":
         directive = (
-            f'Use the token "{token}" as a PERSON\'s name in this passage, and wrap that name in '
-            f"{tags.NAME_OPEN}…{tags.NAME_CLOSE}."
+            f'Write about a PERSON whose name is "{token}". Use "{token}" itself as the person\'s '
+            f"name and wrap it in {tags.NAME_OPEN}{token}{tags.NAME_CLOSE}. Do NOT introduce any "
+            f"OTHER real person by name — only this person is named."
         )
     else:
         nonperson = _NONPERSON_SENSE.get(category, "its non-person sense")
         directive = (
-            f'Use "{token}" as {nonperson}. It is NOT a person here, so tag NOTHING.'
+            f'Write ONLY about "{token}" as {nonperson}. Do NOT mention ANY person by name, and '
+            f"tag NOTHING at all."
         )
     return (
         f"Register: {register}. Category: {category}. SENSE={sense}. "

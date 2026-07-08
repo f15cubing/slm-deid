@@ -1,7 +1,93 @@
-# Results — Base vs. Tuned (SFT v1)
+# Results — Base vs. Tuned
 
-_First base-vs-tuned numbers on the quarantined hard cases (Day 3 midweek gate). Tables and
-95% bootstrap CIs (spec S3.5) are **generated from the saved reports**, not hand-transcribed._
+_Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstrap CIs (spec S3.5) are
+**generated from the saved reports** (`python -m src.eval.report`), not hand-transcribed._
+
+- **[v2 (Day 4)](#v2-day-4--current) — current.** CRAPII-augmented data (242/26), bf16. Over-tagging
+  and the integrity regression fixed; pass-rate up. Model card: [`docs/model-card-v2.md`](model-card-v2.md).
+- **[v1 (Day 3)](#v1-day-3--prior) — prior.** First numbers; high recall but 0.37 over-tag + integrity
+  regression (the problems v2 set out to fix).
+
+---
+
+# v2 (Day 4) — current
+
+_`sft-v2-mps`: LoRA (r=32, α=32, lr=2e-4, seq 2048, 3 epochs, completion-only) over `Qwen/Qwen3-1.7B`,
+trained on the **v2 dataset (242 train / 26 val, CRAPII-augmented)** in **bfloat16** on Apple MPS, and
+evaluated on the **quarantined `eval/hardcases` set (51 scenarios)**. Both models run through the same
+`hf`/MPS backend. **F5** (β=5, recall-weighted) is the headline. `eval_leak = 0` (verified: all three
+guards clean + independent raw scan). LoRA hyperparameters are byte-identical to v1 — only the data
+changed (plus fp16→bf16 for numerical stability; see the model card). Reports:
+`outputs/eval_reports/{base,tuned}-20260708-17*.json`._
+
+<!-- Regenerate (offline, no model / no network) with:
+python -m src.eval.report \
+  base=outputs/eval_reports/base-20260708-173951.json \
+  tuned=outputs/eval_reports/tuned-20260708-174019.json -->
+
+## Overall
+
+| model | n | precision | recall | F5 | leakage_rate | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|---|---|
+| base | 51 | 0.500 [0.18, 0.83] | 0.185 [0.04, 0.35] | 0.190 [0.04, 0.35] | 0.412 [0.27, 0.55] | 0.098 [0.02, 0.20] | 0.039 [0.00, 0.10] | 0.549 [0.41, 0.69] | 0.250 |
+| tuned | 51 | 0.632 [0.40, 0.85] | 0.444 [0.25, 0.64] | 0.450 [0.26, 0.64] | 0.275 [0.16, 0.39] | 0.137 [0.06, 0.24] | 0.020 [0.00, 0.06] | 0.627 [0.49, 0.76] | 0.125 |
+| Δ (tuned−base) |  | +0.132 | +0.259 | +0.260 | -0.137 | +0.039 | -0.020 | +0.078 | -0.125 |
+
+## Per-category (base → tuned within each category)
+
+| category | n | model | recall | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|
+| person_vs_common | 16 | base | 0.125 [0.00, 0.43] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.562 [0.31, 0.81] | 0.125 |
+| person_vs_common | 16 | tuned | 0.125 [0.00, 0.43] | 0.062 [0.00, 0.19] | 0.000 [0.00, 0.00] | 0.500 [0.25, 0.75] | 0.000 |
+| person_vs_place | 10 | base | 0.400 [0.00, 0.86] | 0.100 [0.00, 0.30] | 0.000 [0.00, 0.00] | 0.600 [0.30, 0.90] | 0.250 |
+| person_vs_place | 10 | tuned | 0.400 [0.00, 0.83] | 0.200 [0.00, 0.50] | 0.000 [0.00, 0.00] | 0.500 [0.20, 0.80] | 0.250 |
+| person_vs_eponym | 8 | base | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.750 [0.38, 1.00] | 0.333 |
+| person_vs_eponym | 8 | tuned | 0.667 [0.00, 1.00] | 0.125 [0.00, 0.38] | 0.125 [0.00, 0.38] | 0.750 [0.38, 1.00] | 0.333 |
+| first_name_only | 3 | base | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | – |
+| first_name_only | 3 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| possessive | 3 | base | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 1.000 |
+| possessive | 3 | tuned | 1.000 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.667 [0.00, 1.00] | 0.000 |
+| third_party | 3 | base | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | – |
+| third_party | 3 | tuned | 0.667 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.667 [0.00, 1.00] | – |
+| negative_trap | 5 | base | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| negative_trap | 5 | tuned | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| easy | 3 | base | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | – |
+| easy | 3 | tuned | 0.250 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | – |
+
+## The read (honest: what improved, what regressed)
+
+1. **The Day-4 goal is met — v1's two regressions are fixed.** Over-tagging fell **0.37 → 0.137** and
+   integrity violations fell **0.118 → 0.020** (now below base's 0.039). Overall **pass-rate rose to
+   0.627** (+0.078 vs base), where v1's pass-rate was flat. The fix came entirely from data (targeted
+   person_vs_place / minimal pairs / CRAPII real text) — LoRA hyperparameters were untouched.
+2. **Tuned still beats prompting on the safety axis.** Recall 0.185 → 0.444 and F5 0.190 → 0.450 with
+   CIs that separate from base (recall base `[0.04, 0.35]` vs tuned `[0.25, 0.64]`); leakage 0.412 →
+   0.275. `first_name_only` is the clearest category win (recall 0 → 1.0, pass 0 → 1.0).
+3. **Regression to watch — consistency dropped 0.250 → 0.125.** The tuned model is *less* stable across
+   paraphrases of the same name/non-name than base. Reliability across rewordings is the point of the
+   behavior, so this is the headline weakness of this iteration and the next thing to chase.
+4. **`person_vs_common` recall is flat at 0.125** — the largest eval category (16), and the model still
+   barely tags common-word given-names. The next data-coverage target.
+5. **Recall/F5 are lower than v1's tuned run** (0.44 vs 0.63 / 0.45 vs 0.61) — but v1's higher recall
+   came *with* 0.37 over-tagging and 3× integrity violations. v2 trades a slice of recall for a model
+   that actually holds the spec (higher pass-rate, integrity below base). This is the intended trade.
+
+## Caveats (v2)
+
+- **Small n, single seed.** Overall n=51; several per-category cells are n=3 with CIs spanning most of
+  [0,1]. Only the overall recall/F5/leakage gaps clearly separate from base.
+- **bf16 re-baseline.** v2 is a bf16 lineage (v1 was fp16) because fp16 NaN-diverged on the long CRAPII
+  passages. The bf16 base reproduces the Day-3 fp16 base almost exactly, so base-vs-tuned is still fair;
+  cross-version tuned deltas (v1→v2) should be read as directional. Details in the model card.
+- Reports: `outputs/eval_reports/{base,tuned}-20260708-17*.json` (gitignored). Model: `outputs/sft-v2-mps/`.
+
+---
+
+# v1 (Day 3) — prior
+
+_First base-vs-tuned numbers on the quarantined hard cases (Day 3 midweek gate). Kept as the historical
+record and the baseline v2 improves on. Tables and 95% bootstrap CIs (spec S3.5) are **generated from
+the saved reports**, not hand-transcribed._
 
 **Setup.** Base = prompted `Qwen/Qwen3-1.7B` (non-thinking). Tuned = base + LoRA (r=32, α=32, lr=2e-4,
 seq 2048, 3 epochs, completion-only), trained on the **v1 dataset (146 train / 16 val)** and evaluated

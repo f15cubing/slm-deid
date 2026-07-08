@@ -102,8 +102,9 @@ def main() -> None:
         one_generation(tokenizer)
 
     print("\n== Summary ==")
-    print(f"  tag markers tokenize cleanly: {tag_ok}  "
-          f"({'keep ⟨NAME⟩' if tag_ok else 'consider @@..## fallback'})")
+    print(f"  tag markers round-trip exactly: {tag_ok}  "
+          f"(integrity-safe; note they still FRAGMENT into several BPE tokens — "
+          f"asserted in tests/test_tag_tokenization.py)")
 
 
 if __name__ == "__main__":

@@ -53,7 +53,11 @@ Base model runs and responds in non-thinking mode (verified live on Colab T4); t
 - **Tag syntax:** `⟨NAME⟩…⟨/NAME⟩` (U+27E8 / U+27E9). Reason: single non-ASCII codepoints, so they
   never collide with ASCII `<`/`>` a student might type in prose or code (`a < b`, `List<Name>`).
   Lives only in `src/common/tags.py`. **CONFIRMED** against the real Qwen3 tokenizer (OPEN=3 / CLOSE=4
-  tokens, exact round-trip) — kept, no `@@…##` fallback needed.
+  tokens, exact round-trip) — kept, no `@@…##` fallback needed. This is a deliberate
+  collision-safety-over-token-efficiency trade (8 tokens/span vs `@@…##`'s 3); integrity holds via the
+  lossless byte-BPE round-trip. The finding is now an automated check
+  (`tests/test_tag_tokenization.py`), and the 1-token refinement (markers as *added* special tokens)
+  is logged as a v-next A/B in `docs/plan.md`.
 - **Base model:** `unsloth/Qwen3-1.7B-unsloth-bnb-4bit` (fastest QLoRA path, fits 24GB / Colab).
 - **Env:** code + tokenizer on Mac (no CUDA); model load + inference via `notebooks/day1_setup.ipynb`
   on Colab/RunPod. `requirements.txt` to be pinned from the GPU env's `pip freeze`.

@@ -40,3 +40,11 @@ seed: 0
 val_frac: 0.1
 out_dir: data
 eval_dir: eval       # used ONLY for the leakage guards (token + passage); never read as training data
+
+# --- optional real slice (CRAPII) — OFF unless crapii_path is set ------------------------
+# Not committed. Provide the file (Kaggle/Zenodo download) at data/raw/crapii.jsonl, then set
+# crapii_path below. Routed through the same quality gate + leakage guards; kept SMALL because
+# NAME_STUDENT under-tags non-student names (see src/datagen/real_data.py caveat).
+crapii_path: data/raw/cleaned_repository_pii_train.json
+crapii_limit: 120
+crapii_max_chars: 3000

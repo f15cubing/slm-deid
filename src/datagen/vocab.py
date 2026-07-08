@@ -128,3 +128,24 @@ def eval_vocab(eval_dir: str = "eval") -> set[str]:
 def token_words(token: str) -> set[str]:
     """Lowercased word tokens inside ``token`` (handles multi-word names like 'Maria Gonzalez')."""
     return _words(token)
+
+
+def blocklist_surfaces_in(text: str) -> set[str]:
+    """Eval ambiguous surfaces from :data:`BLOCKLIST` that appear anywhere in ``text``.
+
+    Word-level match for single-token entries; phrase match for multi-word ones ('red cross').
+    Used by the passage-level eval-surface guard so training data shares NO ambiguous surface
+    with the eval set — closing the hole where the teacher invents a famous person (e.g.
+    'Charles Darwin') whose surname is an eval token, which the intended-token-only guard misses.
+    """
+    words = _words(text)
+    low = text.lower()
+    hits: set[str] = set()
+    for tok in BLOCKLIST:
+        parts = tok.split()
+        if len(parts) == 1:
+            if parts[0] in words:
+                hits.add(tok)
+        elif tok in low:
+            hits.add(tok)
+    return hits
