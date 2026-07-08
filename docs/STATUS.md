@@ -42,6 +42,15 @@ _Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned number
   thin/absent (`person_vs_place` had 0 train examples). Full table + honest read: `docs/results.md`. All
   local on Apple MPS.
 
+- **Eval report bootstrap CIs (S3.5) + `docs/results.md` regenerated/corrected** (PR
+  `agent/eval-ci-reporting`, high-risk lane). `src/eval/report.py` now renders the Overall + per-category
+  tables **from the saved JSON reports** with 95% percentile bootstrap CIs (seeded, offline; older reports
+  get `tp/fp/fn` recomputed via `behavioral_checks.check`); `run.py` saves per-item `tp/fp/fn`. Fixed the
+  hand-transcribed impossible base `easy` row (recall 0.0 but pass 0.667 → pass **0.000**) and promoted
+  integrity (0.039→0.118, ~3×, a hard-ceiling regression) + consistency (0.250→0.312, still poor) into the
+  written read. Regression test + CLI guard reject any report where an all-named category has recall 0 with
+  pass>0.
+
 ## In flight
 - **[Day 4] PR `agent/datagen-minpairs-gate` (high-risk, in review)** — data-iteration machinery to fix
   the Day-3 over-tagging (over_tag 0.10→0.37). Adds: matched **minimal-pair** teacher generation
@@ -57,7 +66,8 @@ _Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned number
 - **[Day 4](tasks/day-4.md) — fix in data, not hyperparameters:** generate targeted
   `person_vs_place` / `person_vs_common` / `possessive` / eponym-negative examples (and optionally fold in
   the already-built CRAPII real slice, `src/datagen/real_data.py`) to cut the tuned model's over-tagging
-  (0.37), then retrain + re-measure on those categories. Scale v1 toward 800–2,000; add bootstrap CIs to
-  the eval report (S3.5; eval-harness = high-risk lane). Do NOT touch lr/r/epochs to mask the over-tagging.
+  (0.37) and the integrity regression (0.12), then retrain + re-measure on those categories. Scale v1
+  toward 800–2,000. (Bootstrap CIs S3.5 — done; see Done.) Do NOT touch lr/r/epochs to mask the
+  over-tagging.
 
 _Note: the prompted base already handled the Day-1 sanity case ("Newton" the person). The real test is the Day-2 hard-cases set (the Newton method, Chelsea the place, first-name-only) — that's where the base is expected to wobble and the fine-tune to hold._

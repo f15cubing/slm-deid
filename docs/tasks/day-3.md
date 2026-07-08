@@ -46,4 +46,4 @@ signal: investigate **data quality first** (per the falsifiable-bet rule) before
 at a precision cost (over-tag 0.10→0.37) — SPOV-7 validated on recall/leakage; over-tagging is the Day-4
 data-fix target (concentrated in `person_vs_place`/`person_vs_common`, which v1 under-covered). Full
 table + read: [`docs/results.md`](../results.md). Trained + evaluated locally on Apple MPS.
-_(Note: S3.5 bootstrap CIs deferred to Day 4; v1 was ~300 teacher examples time-boxed under 2h, not the full 800–2,000.)_
+_(Note: S3.5 bootstrap CIs added in PR `agent/eval-ci-reporting` — report tables are now generated from the saved JSON reports with 95% percentile CIs (`python -m src.eval.report`), which also corrected a hand-transcribed `easy` row in `docs/results.md`. v1 was ~300 teacher examples time-boxed under 2h, not the full 800–2,000.)_
