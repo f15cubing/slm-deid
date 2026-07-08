@@ -3,9 +3,18 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-08 — Day 4 v2 retrain + re-eval DONE (on branch `agent/datagen-v2-run`, unmerged): over_tag 0.37→0.137, integrity 0.118→0.020, pass 0.549→0.627; consistency regressed 0.25→0.125. Trained bf16 on MPS (fp16 NaN'd on the long CRAPII passages)._
+_Last updated: 2026-07-08 — consolidated all unmerged work onto `main` (v2 dataset+provenance, co-occurrence contrast, code-quality CI) and added the **v3 Colab notebook** (`notebooks/v3_colab_train_eval.ipynb`): scaled v3 dataset → **4-bit QLoRA on CUDA** → base-vs-tuned, with Drive persistence. Next run is the first canonical 4-bit number (v2 was MPS plain-LoRA, a re-baseline). ⚠️ Generation needs a live teacher key — the project OpenAI key is `billing_not_active`; fix billing or use an Anthropic key on Colab._
 
 ## Done
+- **v3 training set up for Colab (4-bit QLoRA).** Consolidated `agent/datagen-v2-run` +
+  `worktree-testset-review-ui` + `agent/infra-code-quality-loop` onto `main` (124 passed, 2 skipped).
+  Added `notebooks/v3_colab_train_eval.ipynb`: clones `main` → generates the v3 dataset from the frozen
+  `configs/datagen.yaml` recipe at `scale=3.0` (~1,530 raw → ~800–1k kept; a step up from v2's 268) +
+  folds in the committed co-occurrence contrast set + CRAPII slice, all under the same eval-leakage
+  guards → trains the **frozen** `configs/train.yaml` QLoRA → base-vs-tuned on the 51 hard cases →
+  persists adapter/reports/splits to Drive. Data changes only; hyperparameters frozen (Day-4 rule).
+  Blocker to actually generate: the teacher (`gpt-4o`) key returns `billing_not_active` — Colab needs a
+  live OpenAI or Anthropic key, else run with `GENERATE=False` on the committed v2 splits.
 - **Code-quality loop (`make check` + CI)** — `Makefile` gate (ruff `check` + `format --check` + `pytest`)
   and a GitHub Actions `code-quality` workflow running the same on every push/PR. Made the baseline green:
   `ruff format` on `src/`+`tests/` and excluded exploratory `notebooks/` from the linter (`pyproject.toml`).
