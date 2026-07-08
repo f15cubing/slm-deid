@@ -254,7 +254,9 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=None, help="override cfg.seed (diverse batches)")
     ap.add_argument("--out-dir", default=None, help="override cfg.out_dir (separate batch dir)")
     ap.add_argument(
-        "--temperature", type=float, default=0.0,
+        "--temperature",
+        type=float,
+        default=0.0,
         help="teacher sampling temperature; raise (e.g. 0.8) so short batches add NEW passages",
     )
     args = ap.parse_args()

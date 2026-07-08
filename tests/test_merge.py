@@ -41,8 +41,12 @@ def test_merge_combines_dedups_and_folds_crapii(tmp_path):
     crapii.write_text(json.dumps(rec) + "\n", encoding="utf-8")
 
     train, val, stats = merge(
-        [str(s1), str(s2)], crapii_path=str(crapii), crapii_limit=5,
-        eval_dir=str(tmp_path / "noeval"), val_frac=0.0, seed=0,
+        [str(s1), str(s2)],
+        crapii_path=str(crapii),
+        crapii_limit=5,
+        eval_dir=str(tmp_path / "noeval"),
+        val_frac=0.0,
+        seed=0,
     )
     got = train + val
     assert len({e.input for e in got}) == len(got)  # no duplicate inputs

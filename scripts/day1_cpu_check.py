@@ -82,7 +82,7 @@ def one_generation(tokenizer) -> None:
     ).to(device)
     with torch.no_grad():
         out = model.generate(input_ids=input_ids, max_new_tokens=64, do_sample=False)
-    completion = tokenizer.decode(out[0][input_ids.shape[-1]:], skip_special_tokens=True).strip()
+    completion = tokenizer.decode(out[0][input_ids.shape[-1] :], skip_special_tokens=True).strip()
     print(f"  INPUT   : {passage}")
     print(f"  EXPECTED: {note}")
     print(f"  OUTPUT  : {completion}")
@@ -102,9 +102,11 @@ def main() -> None:
         one_generation(tokenizer)
 
     print("\n== Summary ==")
-    print(f"  tag markers round-trip exactly: {tag_ok}  "
-          f"(integrity-safe; note they still FRAGMENT into several BPE tokens — "
-          f"asserted in tests/test_tag_tokenization.py)")
+    print(
+        f"  tag markers round-trip exactly: {tag_ok}  "
+        f"(integrity-safe; note they still FRAGMENT into several BPE tokens — "
+        f"asserted in tests/test_tag_tokenization.py)"
+    )
 
 
 if __name__ == "__main__":

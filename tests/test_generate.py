@@ -127,16 +127,22 @@ def test_surface_guard_drops_any_eval_surface_in_passage():
     # ("Darwin") is dropped even though the intended ambiguous_token ("Sydney") is clean —
     # the intended-token-only guard would miss it.
     leak = Example(
-        id="leak", input="Charles Darwin sailed on the Beagle to Sydney.",
+        id="leak",
+        input="Charles Darwin sailed on the Beagle to Sydney.",
         target=f"{tags.wrap('Charles Darwin')} sailed on the Beagle to Sydney.",
-        spans=[Span(0, 14, "Charles Darwin", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Sydney",
+        spans=[Span(0, 14, "Charles Darwin", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Sydney",
     ).validate()
     clean = Example(
-        id="ok", input="Austin sailed on the Beagle to the harbor.",
+        id="ok",
+        input="Austin sailed on the Beagle to the harbor.",
         target=f"{tags.wrap('Austin')} sailed on the Beagle to the harbor.",
-        spans=[Span(0, 6, "Austin", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Austin",
+        spans=[Span(0, 6, "Austin", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Austin",
     ).validate()
     kept, dropped = drop_eval_surface_overlap([leak, clean])
     assert dropped == 1
@@ -155,8 +161,12 @@ def test_minimal_pair_disposition_drops_bad_pairs():
 
     teacher = TeacherGenerator(gen=gen, verify=None)
     cfg = DatagenConfig(
-        minimal_pairs={"person_vs_place": 3}, category_counts={}, negatives=0,
-        seed=0, val_frac=0.0, eval_dir="___nodir___",
+        minimal_pairs={"person_vs_place": 3},
+        category_counts={},
+        negatives=0,
+        seed=0,
+        val_frac=0.0,
+        eval_dir="___nodir___",
     )
     train, val, drops = build_dataset(cfg, teacher)
     assert len(train) + len(val) == 0
@@ -233,9 +243,14 @@ def test_build_dataset_folds_in_crapii_slice(tmp_path):
     p.write_text(json.dumps(rec) + "\n", encoding="utf-8")
 
     cfg = DatagenConfig(
-        minimal_pairs={}, category_counts={}, negatives=0, seed=0, val_frac=0.0,
+        minimal_pairs={},
+        category_counts={},
+        negatives=0,
+        seed=0,
+        val_frac=0.0,
         eval_dir=str(tmp_path / "noeval"),  # no eval dir -> guards use static BLOCKLIST only
-        crapii_path=str(p), crapii_limit=10,
+        crapii_path=str(p),
+        crapii_limit=10,
     )
     train, val, _ = build_dataset(cfg, _pair_mock_teacher())
     got = train + val
