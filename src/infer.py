@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Callable, Protocol, runtime_checkable
 
 from src.common import prompts
+from src.common.device import detect_backend
 
 
 @runtime_checkable
@@ -36,7 +37,7 @@ class FunctionTagger:
 
 
 class HFTagger:
-    """Prompted tagging via a HF/unsloth causal LM (runs on GPU/Colab).
+    """Prompted tagging via a HF/unsloth causal LM (CUDA/Colab or Apple-Silicon MPS).
 
     The same class serves the **base** model (no adapter) and the **tuned** model (LoRA adapter
     already attached to ``model``); the eval harness just passes whichever it loaded.
@@ -82,20 +83,46 @@ def tag_all(tagger: Tagger, passages: list[str]) -> list[str]:
 
 
 def load_hf_tagger(
-    model_name: str = "unsloth/Qwen3-1.7B-unsloth-bnb-4bit",
+    model_name: str | None = None,
     adapter: str | None = None,
+    backend: str | None = None,
     max_seq_len: int = 2048,
     max_new_tokens: int = 256,
 ) -> HFTagger:
-    """Load a base (or LoRA-adapted) model via unsloth and wrap it as an HFTagger. GPU only."""
-    from unsloth import FastLanguageModel  # lazy, GPU-only
+    """Load a base (or LoRA-adapted) model and wrap it as an HFTagger.
 
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=adapter or model_name,
-        max_seq_length=max_seq_len,
-        load_in_4bit=True,
-        dtype=None,
-    )
-    FastLanguageModel.for_inference(model)
+    Backend is auto-detected (``unsloth`` on CUDA/Colab, ``hf`` on Apple-Silicon/CPU) unless
+    forced. Both base and tuned load through this one function so base-vs-tuned eval runs on the
+    same runtime. ``model_name`` defaults to the backend's canonical base if omitted.
+    """
+    backend = detect_backend(backend)
     name = "tuned" if adapter else "base"
+
+    if backend == "unsloth":
+        from unsloth import FastLanguageModel  # lazy, GPU-only
+
+        base = model_name or "unsloth/Qwen3-1.7B-unsloth-bnb-4bit"
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=adapter or base,
+            max_seq_length=max_seq_len,
+            load_in_4bit=True,
+            dtype=None,
+        )
+        FastLanguageModel.for_inference(model)
+        return HFTagger(model, tokenizer, max_new_tokens=max_new_tokens, name=name)
+
+    # hf / MPS: full-precision base + optional PEFT adapter
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from src.common.device import pick_device
+
+    base = model_name or "Qwen/Qwen3-1.7B"
+    tokenizer = AutoTokenizer.from_pretrained(base)
+    model = AutoModelForCausalLM.from_pretrained(base, torch_dtype=torch.float16)
+    if adapter:
+        from peft import PeftModel
+
+        model = PeftModel.from_pretrained(model, adapter)
+    model.to(pick_device()).eval()
     return HFTagger(model, tokenizer, max_new_tokens=max_new_tokens, name=name)
