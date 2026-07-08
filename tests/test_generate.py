@@ -200,6 +200,33 @@ def test_build_dataset_scale_knob_multiplies_counts(tmp_path):
     assert len(train) + len(val) == 2 * 2 * 2  # 2 pairs * scale 2 * 2 examples
 
 
+def test_build_dataset_folds_in_crapii_slice(tmp_path):
+    # A CRAPII record (tokens/labels format) is folded in via crapii_path and routed through the
+    # gate + leakage guards. Uses a non-eval surname so the surface guard keeps it.
+    import json
+
+    rec = {
+        "document": 1,
+        "full_text": "Kwame wrote a thoughtful essay about the project.",
+        "tokens": ["Kwame", "wrote", "a", "thoughtful", "essay", "about", "the", "project", "."],
+        "trailing_whitespace": [True, True, True, True, True, True, True, False, False],
+        "labels": ["B-NAME", "O", "O", "O", "O", "O", "O", "O", "O"],
+    }
+    p = tmp_path / "crapii.jsonl"
+    p.write_text(json.dumps(rec) + "\n", encoding="utf-8")
+
+    cfg = DatagenConfig(
+        minimal_pairs={}, category_counts={}, negatives=0, seed=0, val_frac=0.0,
+        eval_dir=str(tmp_path / "noeval"),  # no eval dir -> guards use static BLOCKLIST only
+        crapii_path=str(p), crapii_limit=10,
+    )
+    train, val, _ = build_dataset(cfg, _pair_mock_teacher())
+    got = train + val
+    assert any(e.source == "real_crapii" for e in got)
+    for e in got:
+        e.validate()
+
+
 def test_write_splits(tmp_path):
     cfg = DatagenConfig(category_counts={"easy": 4}, negatives=0, seed=2, val_frac=0.5)
     train, val, _ = build_dataset(cfg, _mock_teacher())

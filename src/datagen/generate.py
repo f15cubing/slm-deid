@@ -38,6 +38,12 @@ class DatagenConfig:
     val_frac: float = 0.1
     out_dir: str = "data"
     eval_dir: str = "eval"
+    # Optional real slice (CRAPII). Off unless a path is provided. Routed through the SAME quality
+    # gate + leakage guards as synthetic data; keep it SMALL (NAME_STUDENT under-tags non-students —
+    # see src/datagen/real_data.py). Not committed; download to data/raw/ (Kaggle/Zenodo).
+    crapii_path: str | None = None
+    crapii_limit: int = 0
+    crapii_max_chars: int = 2000
 
 
 def _scaled(count: int, scale: float) -> int:
@@ -177,6 +183,19 @@ def build_dataset(
     negs = generate_negatives(n_neg, seed=cfg.seed) if n_neg else []
     raw.extend(negs)
     verifier_targets.extend([None] * len(negs))
+
+    # 3.5) optional real slice (CRAPII), routed through the SAME gate + leakage guards below.
+    if cfg.crapii_path and Path(cfg.crapii_path).exists():
+        from src.datagen.real_data import load_crapii
+
+        real = load_crapii(
+            cfg.crapii_path,
+            limit=(cfg.crapii_limit or None),
+            max_chars=cfg.crapii_max_chars,
+            names_only=True,
+        )
+        raw.extend(real)
+        verifier_targets.extend([None] * len(real))
 
     # 4) quality gate (incl. Day-4 category-semantics)
     kept, drops = filter_examples(raw, verifier_targets)
