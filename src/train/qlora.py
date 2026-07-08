@@ -120,7 +120,7 @@ def train(cfg: dict, smoke: bool = False, output_dir: str | None = None) -> str:
         train_dataset=ds,
         peft_config=peft_config,  # None on unsloth (already wrapped); LoraConfig on hf
         args=SFTConfig(
-            completion_only_loss=True,   # loss on the tagged completion only
+            completion_only_loss=True,  # loss on the tagged completion only
             max_length=cfg["max_seq_len"],
             per_device_train_batch_size=cfg["per_device_train_batch_size"],
             gradient_accumulation_steps=cfg["gradient_accumulation_steps"],

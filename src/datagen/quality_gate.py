@@ -75,9 +75,7 @@ def check_category_semantics(example: Example) -> GateResult:
         return GateResult(True)
     if cat in _PERSON_AMBIGUOUS:
         token = example.ambiguous_token
-        if token and not re.search(
-            rf"\b{re.escape(token)}\b", example.input, flags=re.IGNORECASE
-        ):
+        if token and not re.search(rf"\b{re.escape(token)}\b", example.input, flags=re.IGNORECASE):
             return GateResult(False, "missing_ambiguous_token")
         return GateResult(True)
     return GateResult(True)

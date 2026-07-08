@@ -6,6 +6,12 @@
 _Last updated: 2026-07-08 — Day 4 v2 retrain + re-eval DONE (on branch `agent/datagen-v2-run`, unmerged): over_tag 0.37→0.137, integrity 0.118→0.020, pass 0.549→0.627; consistency regressed 0.25→0.125. Trained bf16 on MPS (fp16 NaN'd on the long CRAPII passages)._
 
 ## Done
+- **Code-quality loop (`make check` + CI)** — `Makefile` gate (ruff `check` + `format --check` + `pytest`)
+  and a GitHub Actions `code-quality` workflow running the same on every push/PR. Made the baseline green:
+  `ruff format` on `src/`+`tests/` and excluded exploratory `notebooks/` from the linter (`pyproject.toml`).
+  Project skills mirrored to `.claude/skills/` (symlinks into `.cursor/skills/`) so Claude Code discovers
+  `shipping-changes` + `building-and-testing` too. CI installs only the CPU deps the hermetic suite uses
+  (ruff/pytest/torch/faker). 124 passed, 2 skipped.
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
 - Project scaffold: `README.md`, `.gitignore`, `requirements.txt`.
 - Agent workflow: `CLAUDE.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.

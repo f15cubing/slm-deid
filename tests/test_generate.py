@@ -44,8 +44,7 @@ def test_build_dataset_gates_and_splits():
 def test_build_dataset_drops_verifier_disagreement():
     passage = f"{tags.wrap('Grace')} lent me notes, but she showed grace under pressure."
     disagree = (
-        f"{tags.wrap('Grace')} lent me notes, but she showed "
-        f"{tags.wrap('grace')} under pressure."
+        f"{tags.wrap('Grace')} lent me notes, but she showed {tags.wrap('grace')} under pressure."
     )
     teacher = TeacherGenerator(gen=lambda s, u: passage, verify=lambda s, u: disagree)
     cfg = DatagenConfig(category_counts={"person_vs_common": 5}, negatives=0, seed=1)
@@ -59,14 +58,24 @@ def test_deleak_and_split_drops_eval_matches(tmp_path):
     (tmp_path / "eval").mkdir()
     raw_eval = "Chelsea helped me revise my thesis."
     tgt_eval = f"{tags.wrap('Chelsea')} helped me revise my thesis."
-    ev = Example(id="e", input=raw_eval, target=tgt_eval, spans=[Span(0, 7, "Chelsea", True)],
-                 quarantine=True).validate()
+    ev = Example(
+        id="e",
+        input=raw_eval,
+        target=tgt_eval,
+        spans=[Span(0, 7, "Chelsea", True)],
+        quarantine=True,
+    ).validate()
     (tmp_path / "eval" / "hc.jsonl").write_text(dumps(ev) + "\n", encoding="utf-8")
 
-    leak = Example(id="leak", input=raw_eval, target=tgt_eval,
-                   spans=[Span(0, 7, "Chelsea", True)]).validate()
-    clean = Example(id="ok", input="Ada coded.", target=f"{tags.wrap('Ada')} coded.",
-                    spans=[Span(0, 3, "Ada", True)]).validate()
+    leak = Example(
+        id="leak", input=raw_eval, target=tgt_eval, spans=[Span(0, 7, "Chelsea", True)]
+    ).validate()
+    clean = Example(
+        id="ok",
+        input="Ada coded.",
+        target=f"{tags.wrap('Ada')} coded.",
+        spans=[Span(0, 3, "Ada", True)],
+    ).validate()
 
     train, val, n_leak = deleak_and_split(
         [leak, clean], eval_dir=str(tmp_path / "eval"), val_frac=0.0, seed=0
@@ -81,23 +90,31 @@ def test_token_leak_guard_drops_eval_token_overlap(tmp_path):
     # when its PASSAGE text matches no eval passage (the passage-level de-leak would miss it).
     (tmp_path / "eval").mkdir()
     ev = Example(
-        id="e", input="Chelsea helped me revise my thesis.",
+        id="e",
+        input="Chelsea helped me revise my thesis.",
         target=f"{tags.wrap('Chelsea')} helped me revise my thesis.",
-        spans=[Span(0, 7, "Chelsea", True)], quarantine=True,
+        spans=[Span(0, 7, "Chelsea", True)],
+        quarantine=True,
     ).validate()
     (tmp_path / "eval" / "hc.jsonl").write_text(dumps(ev) + "\n", encoding="utf-8")
 
     leak = Example(
-        id="leak", input="Chelsea explained recursion to the study group tonight.",
+        id="leak",
+        input="Chelsea explained recursion to the study group tonight.",
         target=f"{tags.wrap('Chelsea')} explained recursion to the study group tonight.",
-        spans=[Span(0, 7, "Chelsea", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Chelsea",
+        spans=[Span(0, 7, "Chelsea", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Chelsea",
     ).validate()
     clean = Example(
-        id="ok", input="Austin explained recursion to the study group tonight.",
+        id="ok",
+        input="Austin explained recursion to the study group tonight.",
         target=f"{tags.wrap('Austin')} explained recursion to the study group tonight.",
-        spans=[Span(0, 6, "Austin", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Austin",
+        spans=[Span(0, 6, "Austin", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Austin",
     ).validate()
 
     kept, dropped = drop_eval_token_overlap([leak, clean], eval_dir=str(tmp_path / "eval"))

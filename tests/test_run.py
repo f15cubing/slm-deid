@@ -9,11 +9,17 @@ from src.infer import FunctionTagger
 def _examples():
     raw1 = "Ada coded."
     tgt1 = f"{tags.wrap('Ada')} coded."
-    e1 = Example(id="1", input=raw1, target=tgt1, spans=[Span(0, 3, "Ada", True)],
-                 category="easy").validate()
+    e1 = Example(
+        id="1", input=raw1, target=tgt1, spans=[Span(0, 3, "Ada", True)], category="easy"
+    ).validate()
     raw2 = "The Newton method works."
-    e2 = Example(id="2", input=raw2, target=raw2, spans=[Span(4, 10, "Newton", False)],
-                 category="person_vs_eponym").validate()
+    e2 = Example(
+        id="2",
+        input=raw2,
+        target=raw2,
+        spans=[Span(4, 10, "Newton", False)],
+        category="person_vs_eponym",
+    ).validate()
     return [e1, e2]
 
 
@@ -32,6 +38,7 @@ def test_evaluate_with_perfect_tagger():
 
 def test_evaluate_with_over_tagging_tagger():
     examples = _examples()
+
     # A tagger that tags EVERY capitalized word -> over-tags the Newton eponym.
     def overtag(p: str) -> str:
         out = p
