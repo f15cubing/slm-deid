@@ -1,17 +1,39 @@
-# Data-gen config. Day-3 v1 sizing: ~300 teacher examples, time-boxed to keep the full
-# generate->train->eval loop under ~2h on local MPS. Weighted toward the hard ambiguous NAME
-# categories (the crux). Scale toward 800-2,000 on Day 4 (data-iteration day).
+# Data-gen config — Day-4 TARGETED recipe (data-iteration day).
+#
+# Goal: fix the Day-3 over-tagging (base->tuned over_tag 0.10->0.37) by teaching the model to
+# WITHHOLD on non-person uses of ambiguous tokens. The bulk is now MATCHED MINIMAL PAIRS (the
+# same surface used once as a person [tagged] and once as a non-person [untagged]) — the contrast
+# the Day-3 data entirely lacked (person_vs_place had 0 train examples, person_vs_common 4,
+# possessive 1). Tokens come from the curated, eval-DISJOINT bank in src/datagen/vocab.py, so this
+# stays a clean generalization test (see docs/error-analysis-v1.md).
+#
+# `scale` multiplies every count below — the ONE knob to size the run. This file is the per-unit
+# recipe at scale 1.0 (~510 raw examples); the actual larger run is a LATER step, not this PR.
+# Run later with:  python -m src.datagen.generate --config configs/datagen.yaml --provider openai
+scale: 1.0
+
+# --- matched minimal pairs (each entry = number of PAIRS; each pair -> 2 examples) --------
+# Weighted toward the categories Day-3 over-tagged the most. `possessive` pairs contrast a
+# person's possessive ("Joy's essay" -> tagged) with an eponymous possessive ("Joule's law" ->
+# untagged), which also supplies the eponymous-possessive negatives.
+minimal_pairs:
+  person_vs_place: 60
+  person_vs_common: 60
+  possessive: 40
+  person_vs_eponym: 30
+
+# --- teacher single passages per category (register/context variety beyond the pairs) -----
+# negative_trap is bumped for more sentence-initial capitalized non-name negatives (a Day-3
+# over-tag source). No person_vs_* singles here — those are covered by the minimal pairs above,
+# where the token is controlled and the category-semantics gate can verify it.
 category_counts:
-  person_vs_eponym: 55
-  person_vs_place: 55
-  person_vs_common: 55
-  first_name_only: 33
-  possessive: 33
-  third_party: 33
-  negative_trap: 22
-  easy: 16
-negatives: 50        # Faker pattern-type negatives (emails/phones/IDs untagged)
+  negative_trap: 40
+  first_name_only: 20
+  third_party: 20
+  easy: 12
+
+negatives: 40        # Faker pattern-type negatives (emails/phones/IDs untagged; pure = negative_trap)
 seed: 0
 val_frac: 0.1
 out_dir: data
-eval_dir: eval       # used only for the leakage filter; never read as training data
+eval_dir: eval       # used ONLY for the leakage guards (token + passage); never read as training data

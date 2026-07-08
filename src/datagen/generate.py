@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.common.schema import Example, read_jsonl, write_jsonl
+from src.datagen import vocab
 from src.datagen.negatives import generate_negatives
 from src.datagen.quality_gate import filter_examples
 from src.datagen.teacher import TeacherGenerator
@@ -25,12 +26,22 @@ from src.datagen.teacher import TeacherGenerator
 
 @dataclass
 class DatagenConfig:
+    # Teacher single passages per category (context variety).
     category_counts: dict[str, int] = field(default_factory=dict)
+    # Matched minimal PAIRS per category (each entry -> that many pairs -> 2x examples). This is
+    # the Day-4 bulk that teaches person-vs-non-person contrast on identical surfaces.
+    minimal_pairs: dict[str, int] = field(default_factory=dict)
     negatives: int = 0
+    # Multiplies every count above; the one knob to scale the whole recipe for the real run.
+    scale: float = 1.0
     seed: int = 0
     val_frac: float = 0.1
     out_dir: str = "data"
     eval_dir: str = "eval"
+
+
+def _scaled(count: int, scale: float) -> int:
+    return int(round(count * scale))
 
 
 def _norm(text: str) -> str:
@@ -64,6 +75,31 @@ def deleak_and_split(
     return deleaked[n_val:], deleaked[:n_val], n_leak
 
 
+def drop_eval_token_overlap(
+    examples: list[Example], eval_dir: str = "eval"
+) -> tuple[list[Example], int]:
+    """Token-level eval-leakage guard (Day-4 TASK 4; a hard ceiling, in addition to the
+    passage-level de-leak in :func:`deleak_and_split`).
+
+    Drops any generated example whose intended ambiguous token overlaps the eval vocabulary — so
+    the training data can never re-use an eval surface (Newton/Chelsea/…) even inside a *different*
+    passage that the exact-passage de-leak would miss. Reads ``eval`` only to derive the forbidden
+    vocabulary; nothing flows the other way.
+    """
+    ev = vocab.eval_vocab(eval_dir)
+    if not ev:
+        return list(examples), 0
+    kept: list[Example] = []
+    dropped = 0
+    for ex in examples:
+        tok = ex.ambiguous_token
+        if tok and (vocab.token_words(tok) & ev):
+            dropped += 1
+            continue
+        kept.append(ex)
+    return kept, dropped
+
+
 def build_dataset(
     cfg: DatagenConfig,
     teacher: TeacherGenerator,
@@ -71,24 +107,51 @@ def build_dataset(
     """Generate + gate + de-leak + split. Returns (train, val, drop_counts)."""
     raw: list[Example] = []
     verifier_targets: list[str | None] = []
+    rng = random.Random(cfg.seed)
 
-    # 1) teacher-distilled ambiguous passages per category
+    # 1) matched minimal pairs — person [tagged] vs identical non-person [untagged]. Tokens come
+    #    from the curated, eval-DISJOINT bank; possessive pairs contrast a person's possessive
+    #    with an eponymous possessive negative (distinct eponym token).
+    for category, n_pairs in cfg.minimal_pairs.items():
+        tokens = list(vocab.tokens_for(category))
+        if not tokens:
+            continue
+        rng.shuffle(tokens)
+        eponyms = list(vocab.EPONYMS)
+        rng.shuffle(eponyms)
+        for i in range(_scaled(n_pairs, cfg.scale)):
+            person_token = tokens[i % len(tokens)]
+            nonperson_token = eponyms[i % len(eponyms)] if category == "possessive" else None
+            person, nonperson = teacher.generate_pair(
+                category,
+                person_token=person_token,
+                nonperson_token=nonperson_token,
+                id_prefix=f"pair-{category}-{i:04d}",
+            )
+            for ex in (person, nonperson):
+                raw.append(ex)
+                verifier_targets.append(teacher.verify_tagging(ex.input))
+
+    # 2) teacher-distilled single passages per category (context variety)
     for category, count in cfg.category_counts.items():
-        for i in range(count):
+        for i in range(_scaled(count, cfg.scale)):
             ex = teacher.generate(category, id_=f"gen-{category}-{i:04d}")
             raw.append(ex)
             verifier_targets.append(teacher.verify_tagging(ex.input))
 
-    # 2) Faker pattern-type negatives (already valid; no verifier needed)
-    negs = generate_negatives(cfg.negatives, seed=cfg.seed) if cfg.negatives else []
+    # 3) Faker pattern-type negatives (already valid; no verifier needed)
+    n_neg = _scaled(cfg.negatives, cfg.scale)
+    negs = generate_negatives(n_neg, seed=cfg.seed) if n_neg else []
     raw.extend(negs)
     verifier_targets.extend([None] * len(negs))
 
-    # 3) quality gate
+    # 4) quality gate (incl. Day-4 category-semantics)
     kept, drops = filter_examples(raw, verifier_targets)
 
-    # 4) eval-leakage filter (hard ceiling) + deterministic train/val split
+    # 5) eval-leakage (hard ceiling): token-level guard THEN passage-level de-leak + split
+    kept, n_token_leak = drop_eval_token_overlap(kept, cfg.eval_dir)
     train, val, n_leak = deleak_and_split(kept, cfg.eval_dir, cfg.val_frac, cfg.seed)
+    drops["eval_token_leak"] = n_token_leak
     drops["eval_leak"] = n_leak
     return train, val, drops
 

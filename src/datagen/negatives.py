@@ -49,14 +49,17 @@ def generate_negatives(n: int = 20, seed: int = 0) -> list[Example]:
         i += 1
         pii = _pii_values(fake)[i % 4]
         if i % 3 == 0:
-            # mixed: one tagged name + untagged pii
+            # mixed: one CLEAR name (tagged) + untagged pii. This teaches the name/pattern-PII
+            # boundary, but the name is unambiguous, so it is an `easy` item — NOT a
+            # `negative_trap`. Labeling a name-bearing row `negative_trap` is exactly the Day-4
+            # mislabel the category-semantics gate now rejects (root problem 2).
             name = fake.first_name()
             tmpl = _MIXED_TEMPLATES[i % len(_MIXED_TEMPLATES)]
             raw = tmpl.format(name=name, pii=pii)
             start = raw.index(name)
             target = raw[:start] + tags.wrap(name) + raw[start + len(name):]
             spans = [Span(start, start + len(name), name, True)]
-            category = "negative_trap"
+            category = "easy"
         else:
             # pure negative: pattern PII only, nothing tagged
             tmpl = _PURE_TEMPLATES[i % len(_PURE_TEMPLATES)]
