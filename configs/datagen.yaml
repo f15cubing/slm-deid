@@ -7,10 +7,13 @@
 # possessive 1). Tokens come from the curated, eval-DISJOINT bank in src/datagen/vocab.py, so this
 # stays a clean generalization test (see docs/error-analysis-v1.md).
 #
-# `scale` multiplies every count below — the ONE knob to size the run. This file is the per-unit
-# recipe at scale 1.0 (~510 raw examples); the actual larger run is a LATER step, not this PR.
-# Run later with:  python -m src.datagen.generate --config configs/datagen.yaml --provider openai
-scale: 1.0
+# `scale` multiplies every count below — the ONE knob to size the run. The vocab bank was expanded
+# ~3x (src/datagen/vocab.py), so scale:3 gives ~3x the volume at the SAME per-token reuse as the
+# old scale:1 run — real diversity, not repeats. Expect ~1,530 raw examples at scale:3 (~510/unit).
+# COST: the gpt-4o teacher makes ~2 calls/raw example (generate + verify), so scale:3 ≈ ~3k calls
+# per run — budget accordingly, or drop scale back to 1.0 for a cheap smoke run first.
+# Run with:  python -m src.datagen.generate --config configs/datagen.yaml --provider openai
+scale: 3.0
 
 # --- matched minimal pairs (each entry = number of PAIRS; each pair -> 2 examples) --------
 # Weighted toward the categories Day-3 over-tagged the most. `possessive` pairs contrast a
