@@ -38,21 +38,41 @@ BLOCKLIST: frozenset[str] = frozenset(
 )
 
 # --- the curated bank (verified disjoint from eval + blocklist) -------------------------
+# Sizing note: the generator cycles ``tokens[i % len(tokens)]`` (generate.py), so raising
+# ``scale`` only buys DIVERSITY if the bank is large enough to keep per-token reuse low. These
+# banks were expanded ~3x (Day-4 follow-up) so ``scale: 3`` reuses each surface about as often as
+# ``scale: 1`` did before — 3x the volume, same redundancy. Every token here is verified disjoint
+# from the quarantined eval vocabulary + BLOCKLIST by ``tests/test_vocab.py``; keep it that way
+# when adding more (run that test after any edit).
+#
 # Places that double as personal names (person_vs_place minimal pairs).
 PLACES: tuple[str, ...] = (
     "Austin", "Sydney", "Brooklyn", "Savannah", "Georgia", "Sierra", "Phoenix", "Odessa",
     "Adelaide", "Charlotte", "Houston", "Dakota", "Camden", "Raleigh", "Memphis", "Salem",
+    "Dallas", "Denver", "Cleveland", "Kingston", "Lincoln", "Preston", "Aspen", "Carson",
+    "Boston", "Chester", "Kent", "Kenya", "India", "Paris", "Vienna", "Montana", "Nevada",
+    "Virginia", "Carolina", "Cheyenne", "Sedona", "Reno", "Tacoma", "Cody", "Milan", "Rome",
+    "Israel", "Laredo", "Trenton", "Augusta", "Orlando", "Kobe", "Rio", "Everest", "Laken",
+    "Kingsley", "Bristol", "Cairo", "Diego", "Antonio", "Francisco",
 )
 # Common words / given names (person_vs_common minimal pairs). Also reused as the person token
 # for possessive pairs ("Joy's essay" vs the eponymous "Joule's law").
 COMMON_WORDS: tuple[str, ...] = (
     "Joy", "Melody", "Daisy", "Iris", "Pearl", "Dawn", "Autumn", "Miles", "Frank", "Rich",
     "Drew", "Sky", "Sunny", "Ivy", "Holly", "Robin", "Jay", "Dale", "Wade",
+    "Hazel", "Sage", "Fern", "Clay", "Reed", "Heath", "Brook", "Cliff", "Bud", "Chip", "Buck",
+    "Penny", "Ginger", "Star", "Amber", "Ruby", "Jade", "Olive", "Basil", "Hunter", "Chase",
+    "Dove", "Wren", "Lark", "Lane", "Colt", "Fawn", "June", "Bell", "Faye", "Hank", "Gale",
+    "Dot", "Bea", "Cash", "Crystal", "Coral", "Rosemary", "Forest",
 )
 # Surnames that double as units/laws/methods (person_vs_eponym + eponymous-possessive negatives).
 EPONYMS: tuple[str, ...] = (
     "Euler", "Fourier", "Hertz", "Watt", "Joule", "Kelvin", "Ampere", "Boole", "Planck",
     "Curie", "Faraday", "Volta", "Bunsen", "Coulomb", "Tesla", "Doppler", "Richter", "Mach",
+    "Gray", "Henry", "Weber", "Siemens", "Bohr", "Fermi", "Dalton", "Hooke", "Bernoulli",
+    "Reynolds", "Stokes", "Maxwell", "Gilbert", "Celsius", "Fahrenheit", "Hamilton", "Lagrange",
+    "Cauchy", "Gibbs", "Angstrom", "Rydberg", "Boltzmann", "Poisson", "Laplace", "Nyquist",
+    "Bessel", "Legendre", "Rankine", "Wien", "Compton", "Torr", "Darcy", "Sievert", "Becquerel",
 )
 
 # Per-category token pool for minimal-pair generation. For ``possessive`` the person half draws a
