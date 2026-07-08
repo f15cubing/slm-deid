@@ -39,4 +39,13 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Training backend (auto-selected by hardware)
+
+- **Apple Silicon (Mac):** local LoRA via PyTorch + PEFT on the `mps` device — the default when no CUDA
+  GPU is present. Train with `configs/train.mps.yaml`, prefixed by `PYTORCH_ENABLE_MPS_FALLBACK=1`.
+- **Colab / CUDA:** 4-bit QLoRA via Unsloth with `configs/train.yaml`. `unsloth`/`bitsandbytes` are
+  Linux-gated in `requirements.txt`, so a Mac `pip install` skips them.
+
+Exact build / run / train / eval commands live in `.cursor/skills/building-and-testing/SKILL.md`.
+
 See `docs/plan.md` for the day-by-day arc and `AGENTS.md` for how to ship changes here.
