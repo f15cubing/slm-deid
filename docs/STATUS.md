@@ -52,7 +52,15 @@ _Last updated: 2026-07-07 — Day 3 midweek gate MET (first base-vs-tuned number
   pass>0.
 
 ## In flight
-- (none — Day 3 gate met; ready for Day 4.)
+- **[Day 4] PR `agent/datagen-minpairs-gate` (high-risk, in review)** — data-iteration machinery to fix
+  the Day-3 over-tagging (over_tag 0.10→0.37). Adds: matched **minimal-pair** teacher generation
+  (`teacher.generate_pair`) + an eval-**disjoint** vocab bank (`src/datagen/vocab.py`) whose hints no
+  longer seed eval tokens; a **category-semantics** quality gate (negative_trap⇒0 names; person-vs-*⇒
+  intended token present; possessive⇒possessive) so labels are trustworthy; a **token-level
+  eval-leakage guard** (`drop_eval_token_overlap`) on top of the passage-level de-leak; a targeted
+  `configs/datagen.yaml` recipe (scale knob; ~510 examples @1.0, ~50/50 person/non-person); and
+  `docs/error-analysis-v1.md` (S4.1+S4.2). Code+config+analysis only — no generation run, no
+  training-config change; leakage guard strengthened, not weakened. 109 tests green.
 
 ## Next  — per `docs/tasks/`
 - **[Day 4](tasks/day-4.md) — fix in data, not hyperparameters:** generate targeted

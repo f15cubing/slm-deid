@@ -72,6 +72,26 @@ def test_bad_enum_values_rejected():
         ex.validate()
 
 
+def test_ambiguous_token_defaults_none_and_roundtrips():
+    ex = make_valid()
+    assert ex.ambiguous_token is None  # optional field defaults to None
+    ex.ambiguous_token = "Chelsea"
+    again = loads(dumps(ex))
+    assert again.ambiguous_token == "Chelsea"
+    assert again == ex  # full round-trip equality preserved
+    again.validate()
+
+
+def test_legacy_row_without_ambiguous_token_loads():
+    # rows written before the field existed (e.g. data/splits/*) must still deserialize.
+    legacy = Example.from_dict(
+        {"id": "x", "input": "Ada coded.", "target": f"{tags.wrap('Ada')} coded.",
+         "spans": [{"start": 0, "end": 3, "text": "Ada", "is_name": True}]}
+    )
+    assert legacy.ambiguous_token is None
+    legacy.validate()
+
+
 def test_untagged_example_with_no_names():
     raw = "We applied the Newton method to approximate the root."
     ex = Example(

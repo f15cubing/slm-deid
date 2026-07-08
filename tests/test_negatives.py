@@ -35,3 +35,15 @@ def test_mixed_examples_tag_only_the_name():
         # exactly the name is tagged; the email/phone/id/url stays untagged
         assert len(tags.tagged_spans(ex.target)) == 1
         assert tags.unwrap(ex.target) == ex.input
+
+
+def test_category_labels_are_trustworthy():
+    # A row that TAGS a name must NOT be labeled negative_trap (Day-4 root problem 2): the
+    # category-semantics gate will drop negative_trap rows that tag names, so mixed name+pii
+    # examples carry a name-bearing category instead. Pure pattern negatives stay negative_trap.
+    exs = generate_negatives(n=30, seed=5)
+    for ex in exs:
+        if ex.name_spans():
+            assert ex.category != "negative_trap", f"{ex.id}: tags a name but labeled negative_trap"
+        else:
+            assert ex.category == "negative_trap", f"{ex.id}: pure negative not negative_trap"

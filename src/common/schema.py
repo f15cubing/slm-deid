@@ -72,6 +72,11 @@ class Example:
     source: str = "handbuilt"
     paraphrase_group: str | None = None
     quarantine: bool = False
+    # The intended ambiguous surface token this example teaches (e.g. "Austin" for a
+    # person_vs_place minimal pair). Set by the minimal-pair generator; enables the
+    # category-semantics gate and the token-level eval-leakage guard. Optional/back-compat:
+    # legacy rows and negatives leave it None.
+    ambiguous_token: str | None = None
 
     # --- (de)serialization -------------------------------------------------------------
     @staticmethod
@@ -88,6 +93,9 @@ class Example:
                 None if d.get("paraphrase_group") is None else str(d["paraphrase_group"])
             ),
             quarantine=bool(d.get("quarantine", False)),
+            ambiguous_token=(
+                None if d.get("ambiguous_token") is None else str(d["ambiguous_token"])
+            ),
         )
 
     def to_dict(self) -> dict:
