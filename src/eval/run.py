@@ -29,7 +29,9 @@ class EvalReport:
     n: int
     overall: M.Metrics
     by_category: dict[str, M.Metrics]
-    # per-item dicts: {id, category, input, output, pass, leaked, over_tagged, integrity_ok}
+    # per-item dicts: {id, category, input, output, pass, leaked, over_tagged, integrity_ok,
+    #                  tp, fp, fn}. The tp/fp/fn counts make reports self-contained so bootstrap
+    #                  CIs (src/eval/report.py) can be computed offline without the eval gold.
     outputs: list[dict] = field(default_factory=list)
     judge_summary: dict | None = None
 
@@ -79,6 +81,9 @@ def evaluate(
                 "leaked": r.leaked,
                 "over_tagged": r.over_tagged,
                 "integrity_ok": r.integrity_ok,
+                "tp": r.tp,
+                "fp": r.fp,
+                "fn": r.fn,
             }
         )
 
@@ -91,9 +96,7 @@ def evaluate(
             for dim in ("spec_adherence", "robustness", "task_quality", "consistency")
         }
         judge_summary["mean_total"] = round(sum(s.total for s in scores) / n, 3)
-        judge_summary["disagreement_rate"] = round(
-            sum(1 for s in scores if s.disagreement) / n, 3
-        )
+        judge_summary["disagreement_rate"] = round(sum(1 for s in scores if s.disagreement) / n, 3)
 
     return EvalReport(
         label=label,
@@ -140,9 +143,7 @@ def main() -> None:
     reports: list[EvalReport] = []
     for mid in model_ids:
         adapter = None if mid == "base" else mid
-        tagger = load_hf_tagger(
-            model_name=args.base_model, adapter=adapter, backend=args.backend
-        )
+        tagger = load_hf_tagger(model_name=args.base_model, adapter=adapter, backend=args.backend)
         label = args.label if (args.label and len(model_ids) == 1) else tagger.name
         report = evaluate(tagger, examples, label=label)
         path = write_report(report, args.report_dir)
