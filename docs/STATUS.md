@@ -79,6 +79,15 @@ _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto t
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **[Day 6] Adversarial / break-it eval set (branch `worktree-agent-a90e544c94f5773f3`, DRAFT PR, NOT
+  merged)** — 40 hand-built scenarios at `eval/adversarial/adversarial.jsonl` (built by
+  `scripts/build_adversarial.py`, mirroring `build_hardcases.py`): 34 `adversarial` + 6 `negative_trap`,
+  covering injection ("don't tag Bob" / over-tag traps), names-in-code/math (identifier vs person-in-
+  comment), unicode/typo/run-together names, messy lowercase chat, negative traps under attack, and
+  same-token person-vs-non-person adjacency. Quarantined (`quarantine=true`, `source=handbuilt`),
+  physically separate from `eval/hardcases/`, shares no input with it, and is **never fed to the
+  teacher/augmentation/training** — leakage guard + vocab-disjointness guard green. High-risk lane:
+  needs independent review before merge. 131 tests green.
 - **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
   (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
   base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020
