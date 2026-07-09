@@ -3,9 +3,14 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto the consolidated `main`. v3 now has REAL numbers on MPS bf16: recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86 (over_tag/integrity held) — see `docs/results.md`→v3, `docs/model-card-v3.md`. The teacher-key blocker is bypassed by the in-session AUTHORED teacher (`--provider authored`), so Colab can generate with NO key. Pending: the canonical live-teacher 4-bit QLoRA run on Colab (re-baselines vs MPS bf16). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
+_Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto the consolidated `main`. v3 now has REAL numbers on MPS bf16: recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86 (over_tag/integrity held) — see `docs/results.md`→v3, `docs/model-card-v3.md`. The teacher-key blocker is resolved two ways: the in-session AUTHORED teacher (`--provider authored`, NO key), and now the **TrueFoundry LLM Gateway** (`--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`). Pending: the canonical live-teacher 4-bit QLoRA run on Colab (re-baselines vs MPS bf16). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
+- **TrueFoundry (OpenAI-compatible) teacher gateway supported.** `build_openai_complete` now defaults
+  its model from `TEACHER_MODEL` (else `gpt-4o`); the OpenAI SDK already reads `OPENAI_API_KEY` +
+  `OPENAI_BASE_URL`, so pointing the teacher at the TrueFoundry LLM Gateway is pure env config
+  (`--provider openai`). The v3 notebook's credentials cell documents the path. Unblocks the pending
+  live-teacher run without an OpenAI/Anthropic key. Fast lane; teacher client only.
 - **v3 training set up for Colab (4-bit QLoRA).** Consolidated `agent/datagen-v2-run` +
   `worktree-testset-review-ui` + `agent/infra-code-quality-loop` onto `main` (124 passed, 2 skipped).
   Added `notebooks/v3_colab_train_eval.ipynb`: clones `main` → generates the v3 dataset from the frozen
