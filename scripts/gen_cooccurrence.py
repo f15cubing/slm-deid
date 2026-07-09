@@ -97,92 +97,237 @@ def build(marked: str) -> tuple[str, str, list[Span]]:
 # eval-DISJOINT bank in src/datagen/vocab.py.
 PASSAGES: list[tuple[str, str, str, str, str]] = [
     # ---- person_vs_common: given name vs the plant/flower/word it collides with ----
-    ("cooccur-ivy-1", "person_vs_common", "essay", "Ivy",
-     "When [[Ivy]] moved into the old cottage, she was delighted to find {{ivy}} "
-     "climbing the stone walls, its dark leaves softening the weathered facade."),
-    ("cooccur-holly-1", "person_vs_common", "essay", "Holly",
-     "[[Holly]] volunteered to decorate the hall, weaving sprigs of {{holly}} with "
-     "their bright red berries into every wreath along the staircase."),
-    ("cooccur-iris-1", "person_vs_common", "essay", "Iris",
-     "Every spring [[Iris]] planted a fresh row of {{iris}} along the back fence, and "
-     "by June the purple blooms had all but taken over the garden."),
-    ("cooccur-daisy-1", "person_vs_common", "dialogue", "Daisy",
-     "\"Look what I found,\" said [[Daisy]], holding up a single white {{daisy}} she had "
-     "picked from the edge of the lawn."),
-    ("cooccur-pearl-1", "person_vs_common", "essay", "Pearl",
-     "[[Pearl]] inherited her grandmother's necklace, a single {{pearl}} on a fine gold "
-     "chain that she wore to every recital."),
-    ("cooccur-dawn-1", "person_vs_common", "essay", "Dawn",
-     "[[Dawn]] loved to hike before {{dawn}}, reaching the summit just as the first light "
-     "spilled over the ridge."),
-    ("cooccur-autumn-1", "person_vs_common", "essay", "Autumn",
-     "By the time {{autumn}} arrived, [[Autumn]] had already filled three sketchbooks with "
-     "drawings of the turning leaves."),
-    ("cooccur-robin-1", "person_vs_common", "dialogue", "Robin",
-     "\"Did you name the cat after the bird?\" I asked. [[Robin]] laughed and said no — "
-     "the {{robin}} on the feeder had come first, long before the cat."),
-    ("cooccur-jay-1", "person_vs_common", "essay", "Jay",
-     "[[Jay]] kept a careful journal of every {{jay}} that visited the oak, noting the flash "
-     "of blue each time one landed on the rail."),
-    ("cooccur-sky-1", "person_vs_common", "essay", "Sky",
-     "[[Sky]] repainted the {{sky}} a dozen different shades before finally settling on the "
-     "pale gold of a late summer evening."),
-    ("cooccur-melody-1", "person_vs_common", "essay", "Melody",
-     "[[Melody]] hummed the {{melody}} over and over until the whole choir had it by heart."),
-    ("cooccur-joy-1", "person_vs_common", "essay", "Joy",
-     "Nothing could dim the {{joy}} on the crowded platform when [[Joy]] finally stepped off "
-     "the train after a year abroad."),
-    ("cooccur-frank-1", "person_vs_common", "dialogue", "Frank",
-     "\"Let me be {{frank}} with you,\" [[Frank]] said, setting down his coffee. \"The numbers "
-     "just don't add up.\""),
-    ("cooccur-rich-1", "person_vs_common", "essay", "Rich",
-     "[[Rich]] never acted {{rich}}, even after the company sold and the money finally came in."),
-    ("cooccur-miles-1", "person_vs_common", "essay", "Miles",
-     "[[Miles]] had walked for {{miles}} before he realized he had left the map back at the "
-     "trailhead."),
-    ("cooccur-drew-1", "person_vs_common", "essay", "Drew",
-     "[[Drew]] {{drew}} the same lighthouse every summer, filling one notebook after another."),
-    ("cooccur-dale-1", "person_vs_common", "essay", "Dale",
-     "[[Dale]] grew up in a quiet {{dale}} in the north, where the hills folded down into a "
-     "single green valley."),
-    ("cooccur-wade-1", "person_vs_common", "dialogue", "Wade",
-     "[[Wade]] watched the children {{wade}} into the shallows, their laughter carrying clear "
-     "across the lake."),
-    ("cooccur-sunny-1", "person_vs_common", "essay", "Sunny",
-     "[[Sunny]] promised the picnic would go ahead on any {{sunny}} afternoon, rain the day "
-     "before be damned."),
+    (
+        "cooccur-ivy-1",
+        "person_vs_common",
+        "essay",
+        "Ivy",
+        "When [[Ivy]] moved into the old cottage, she was delighted to find {{ivy}} "
+        "climbing the stone walls, its dark leaves softening the weathered facade.",
+    ),
+    (
+        "cooccur-holly-1",
+        "person_vs_common",
+        "essay",
+        "Holly",
+        "[[Holly]] volunteered to decorate the hall, weaving sprigs of {{holly}} with "
+        "their bright red berries into every wreath along the staircase.",
+    ),
+    (
+        "cooccur-iris-1",
+        "person_vs_common",
+        "essay",
+        "Iris",
+        "Every spring [[Iris]] planted a fresh row of {{iris}} along the back fence, and "
+        "by June the purple blooms had all but taken over the garden.",
+    ),
+    (
+        "cooccur-daisy-1",
+        "person_vs_common",
+        "dialogue",
+        "Daisy",
+        '"Look what I found," said [[Daisy]], holding up a single white {{daisy}} she had '
+        "picked from the edge of the lawn.",
+    ),
+    (
+        "cooccur-pearl-1",
+        "person_vs_common",
+        "essay",
+        "Pearl",
+        "[[Pearl]] inherited her grandmother's necklace, a single {{pearl}} on a fine gold "
+        "chain that she wore to every recital.",
+    ),
+    (
+        "cooccur-dawn-1",
+        "person_vs_common",
+        "essay",
+        "Dawn",
+        "[[Dawn]] loved to hike before {{dawn}}, reaching the summit just as the first light "
+        "spilled over the ridge.",
+    ),
+    (
+        "cooccur-autumn-1",
+        "person_vs_common",
+        "essay",
+        "Autumn",
+        "By the time {{autumn}} arrived, [[Autumn]] had already filled three sketchbooks with "
+        "drawings of the turning leaves.",
+    ),
+    (
+        "cooccur-robin-1",
+        "person_vs_common",
+        "dialogue",
+        "Robin",
+        '"Did you name the cat after the bird?" I asked. [[Robin]] laughed and said no — '
+        "the {{robin}} on the feeder had come first, long before the cat.",
+    ),
+    (
+        "cooccur-jay-1",
+        "person_vs_common",
+        "essay",
+        "Jay",
+        "[[Jay]] kept a careful journal of every {{jay}} that visited the oak, noting the flash "
+        "of blue each time one landed on the rail.",
+    ),
+    (
+        "cooccur-sky-1",
+        "person_vs_common",
+        "essay",
+        "Sky",
+        "[[Sky]] repainted the {{sky}} a dozen different shades before finally settling on the "
+        "pale gold of a late summer evening.",
+    ),
+    (
+        "cooccur-melody-1",
+        "person_vs_common",
+        "essay",
+        "Melody",
+        "[[Melody]] hummed the {{melody}} over and over until the whole choir had it by heart.",
+    ),
+    (
+        "cooccur-joy-1",
+        "person_vs_common",
+        "essay",
+        "Joy",
+        "Nothing could dim the {{joy}} on the crowded platform when [[Joy]] finally stepped off "
+        "the train after a year abroad.",
+    ),
+    (
+        "cooccur-frank-1",
+        "person_vs_common",
+        "dialogue",
+        "Frank",
+        '"Let me be {{frank}} with you," [[Frank]] said, setting down his coffee. "The numbers '
+        "just don't add up.\"",
+    ),
+    (
+        "cooccur-rich-1",
+        "person_vs_common",
+        "essay",
+        "Rich",
+        "[[Rich]] never acted {{rich}}, even after the company sold and the money finally came in.",
+    ),
+    (
+        "cooccur-miles-1",
+        "person_vs_common",
+        "essay",
+        "Miles",
+        "[[Miles]] had walked for {{miles}} before he realized he had left the map back at the "
+        "trailhead.",
+    ),
+    (
+        "cooccur-drew-1",
+        "person_vs_common",
+        "essay",
+        "Drew",
+        "[[Drew]] {{drew}} the same lighthouse every summer, filling one notebook after another.",
+    ),
+    (
+        "cooccur-dale-1",
+        "person_vs_common",
+        "essay",
+        "Dale",
+        "[[Dale]] grew up in a quiet {{dale}} in the north, where the hills folded down into a "
+        "single green valley.",
+    ),
+    (
+        "cooccur-wade-1",
+        "person_vs_common",
+        "dialogue",
+        "Wade",
+        "[[Wade]] watched the children {{wade}} into the shallows, their laughter carrying clear "
+        "across the lake.",
+    ),
+    (
+        "cooccur-sunny-1",
+        "person_vs_common",
+        "essay",
+        "Sunny",
+        "[[Sunny]] promised the picnic would go ahead on any {{sunny}} afternoon, rain the day "
+        "before be damned.",
+    ),
     # ---- person_vs_place: given name vs the city/place it collides with ----
-    ("cooccur-austin-1", "person_vs_place", "essay", "Austin",
-     "[[Austin]] had never actually been to {{Austin}}, a coincidence his coworkers in Texas "
-     "never let him forget."),
-    ("cooccur-sydney-1", "person_vs_place", "essay", "Sydney",
-     "[[Sydney]] booked the flight to {{Sydney}} months in advance, eager to finally see the "
-     "harbor she had only known from postcards."),
-    ("cooccur-phoenix-1", "person_vs_place", "essay", "Phoenix",
-     "After the wildfire, [[Phoenix]] moved back to {{Phoenix}} to help her family rebuild the "
-     "house from the ground up."),
-    ("cooccur-savannah-1", "person_vs_place", "essay", "Savannah",
-     "[[Savannah]] wrote her entire thesis on the {{savannah}}, though she had never once set "
-     "foot outside the city."),
-    ("cooccur-brooklyn-1", "person_vs_place", "dialogue", "Brooklyn",
-     "\"People are always surprised,\" [[Brooklyn]] said, \"to learn I grew up nowhere near "
-     "{{Brooklyn}} and have never crossed the bridge I was named for.\""),
-    ("cooccur-salem-1", "person_vs_place", "essay", "Salem",
-     "[[Salem]] spent the whole drive telling ghost stories about {{Salem}}, where the family "
-     "was headed for the long weekend."),
+    (
+        "cooccur-austin-1",
+        "person_vs_place",
+        "essay",
+        "Austin",
+        "[[Austin]] had never actually been to {{Austin}}, a coincidence his coworkers in Texas "
+        "never let him forget.",
+    ),
+    (
+        "cooccur-sydney-1",
+        "person_vs_place",
+        "essay",
+        "Sydney",
+        "[[Sydney]] booked the flight to {{Sydney}} months in advance, eager to finally see the "
+        "harbor she had only known from postcards.",
+    ),
+    (
+        "cooccur-phoenix-1",
+        "person_vs_place",
+        "essay",
+        "Phoenix",
+        "After the wildfire, [[Phoenix]] moved back to {{Phoenix}} to help her family rebuild the "
+        "house from the ground up.",
+    ),
+    (
+        "cooccur-savannah-1",
+        "person_vs_place",
+        "essay",
+        "Savannah",
+        "[[Savannah]] wrote her entire thesis on the {{savannah}}, though she had never once set "
+        "foot outside the city.",
+    ),
+    (
+        "cooccur-brooklyn-1",
+        "person_vs_place",
+        "dialogue",
+        "Brooklyn",
+        '"People are always surprised," [[Brooklyn]] said, "to learn I grew up nowhere near '
+        '{{Brooklyn}} and have never crossed the bridge I was named for."',
+    ),
+    (
+        "cooccur-salem-1",
+        "person_vs_place",
+        "essay",
+        "Salem",
+        "[[Salem]] spent the whole drive telling ghost stories about {{Salem}}, where the family "
+        "was headed for the long weekend.",
+    ),
     # ---- person_vs_eponym: surname vs the unit named after someone ----
-    ("cooccur-watt-1", "person_vs_eponym", "essay", "Watt",
-     "[[Watt]] explained to the class that a single sixty-{{watt}} bulb would be plenty of "
-     "light for such a small study."),
-    ("cooccur-joule-1", "person_vs_eponym", "essay", "Joule",
-     "[[Joule]] reminded the students that one {{joule}} is a surprisingly small amount of "
-     "energy in everyday terms."),
-    ("cooccur-hertz-1", "person_vs_eponym", "essay", "Hertz",
-     "[[Hertz]] tuned the string patiently until the meter read exactly four hundred and forty "
-     "{{hertz}}."),
-    ("cooccur-kelvin-1", "person_vs_eponym", "dialogue", "Kelvin",
-     "\"Set it to two hundred and fifty {{kelvin}},\" [[Kelvin]] said, \"and label every sample "
-     "before you close the freezer.\""),
+    (
+        "cooccur-watt-1",
+        "person_vs_eponym",
+        "essay",
+        "Watt",
+        "[[Watt]] explained to the class that a single sixty-{{watt}} bulb would be plenty of "
+        "light for such a small study.",
+    ),
+    (
+        "cooccur-joule-1",
+        "person_vs_eponym",
+        "essay",
+        "Joule",
+        "[[Joule]] reminded the students that one {{joule}} is a surprisingly small amount of "
+        "energy in everyday terms.",
+    ),
+    (
+        "cooccur-hertz-1",
+        "person_vs_eponym",
+        "essay",
+        "Hertz",
+        "[[Hertz]] tuned the string patiently until the meter read exactly four hundred and forty "
+        "{{hertz}}.",
+    ),
+    (
+        "cooccur-kelvin-1",
+        "person_vs_eponym",
+        "dialogue",
+        "Kelvin",
+        '"Set it to two hundred and fifty {{kelvin}}," [[Kelvin]] said, "and label every sample '
+        'before you close the freezer."',
+    ),
 ]
 
 
