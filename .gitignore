@@ -30,6 +30,7 @@ merged_model/
 # Data (large / generated). Keep small curated eval + schema under version control explicitly.
 data/generated/
 data/raw/
+data/_*/          # scratch generation batches (data/_b1) + probe slices (data/_heldout, real text)
 *.parquet
 *.arrow
 
