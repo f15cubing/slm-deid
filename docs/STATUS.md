@@ -79,6 +79,13 @@ _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto t
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **OOD generalization probe (branch `worktree-ood-probe`, DRAFT PR — high-risk lane)** — new quarantined
+  `eval/ood_probe` (36 cases) built by `scripts/build_ood_probe.py`, with surfaces disjoint from **both**
+  the eval set and the training banks (guard in-script + `test_vocab`/`test_no_eval_leakage`). Base-vs-tuned
+  on `sft-v3-mps` (MPS bf16): **recall 0.05→0.89, pass 0.53→0.89, consistency 0.00→0.90, over-tag flat 0.11**
+  — mirrors in-distribution → judgment generalized, not memorized. Perfect eponym/place/first-name on novel
+  tokens. Two real residual over-tags (season-word, eponymous-possessive) + a new honorific-boundary quirk.
+  See `docs/results.md` → OOD probe. Eval-only, never fed to training; leakage guard green.
 - **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
   (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
   base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020

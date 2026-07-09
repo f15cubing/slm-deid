@@ -10,6 +10,71 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
   integrity, but recall/consistency regressed. Model card: [`docs/model-card-v2.md`](model-card-v2.md).
 - **[v1 (Day 3)](#v1-day-3--prior) — prior.** First numbers; high recall but 0.37 over-tag + integrity
   regression.
+- **[OOD generalization probe](#ood-generalization-probe-v3) — v3 stress test.** 36 fresh cases whose
+  ambiguous surfaces are disjoint from **both** the eval set and the training banks. Tuned holds:
+  recall 0.05→0.89, pass 0.53→0.89, consistency 0.00→0.90, over-tag flat at 0.11 — mirrors the
+  in-distribution numbers, so the judgment generalized rather than memorized vocabulary.
+
+---
+
+# OOD generalization probe (v3)
+
+_A held-out **out-of-distribution** probe (`eval/ood_probe`, 36 cases: 18 name / 18 no-name), built by
+`scripts/build_ood_probe.py` and quarantined like the main eval. Every ambiguous surface here is
+disjoint from the eval **BLOCKLIST** **and** the training vocab banks (`PLACES`/`COMMON_WORDS`/`EPONYMS`
+in `src/datagen/vocab.py`) — verified by an in-script guard, plus `tests/test_vocab.py` (bank ∩
+eval-vocab = ∅) and `tests/test_no_eval_leakage.py` (no OOD input duplicates a training row). The
+training-bank disjointness is the load-bearing property for the memorization claim: the tuned model
+never saw these surfaces **as name candidates** in training. (Two OOD surfaces, `will` and `summer`,
+also occur in the standard eval, but only as incidental common words — `"…the project will be
+finished"`, `"Last summer I visited Chelsea"` — never as ambiguous name surfaces, so they are still
+novel *as names* to the model.) Fresh surfaces include `Boyle`/`Kepler`/`Morse` (eponyms), `Jackson`/`Victoria`/`Geneva`/`Berlin`
+(places), `Will`/`Grant`/`Summer`/`Carol` (common-word / verb minimal pairs), and non-Western names
+(`Okafor`/`Nakamura`/`Kofi`/`Okonkwo`). Run: `python -m src.eval.run --split eval/ood_probe --compare
+base outputs/sft-v3-mps` (base `Qwen/Qwen3-1.7B`, bf16 on Apple MPS, adapter `sft-v3-mps`), 2026-07-09._
+
+| model | n | precision | recall | F5 | leakage | over-tag | integrity viol. | pass | consistency |
+|---|---|---|---|---|---|---|---|---|---|
+| base | 36 | 0.20 | 0.05 | 0.05 | 0.47 | 0.11 | 0.08 | 0.53 | 0.00 |
+| **tuned (v3)** | 36 | **0.81** | **0.89** | **0.89** | **0.06** | 0.11 | **0.00** | **0.89** | **0.90** |
+
+**Per-category (tuned).** Perfect (recall 1.0 / precision 1.0 / pass 1.0) on the categories where
+memorization would help most — `person_vs_eponym`, `person_vs_place`, `first_name_only` — on tokens the
+model never saw; `negative_trap` tagged nothing (0 false positives). `person_vs_common` recall 1.0 /
+pass 0.88. Weaker cells are `possessive` (pass 0.50) and `easy`/`third_party` (pass 0.67 / 0.50), all
+explained by the four failures below.
+
+**The four tuned failures — only two are genuine judgment errors:**
+
+1. `Summer felt endless…` → tagged "Summer" (season). Genuine false-positive on a common-word name.
+2. `Halley's comet…` → tagged "Halley" (eponymous possessive). Genuine — consistent with the residual
+   eponymous-possessive over-tag already flagged in [`docs/model-card-v3.md`](model-card-v3.md).
+3. `My advisor, Dr. Nakamura,…` and 4. `Dear Dr. Okonkwo,…` → the model **found** the name but tagged the
+   honorific inside the span (`⟨NAME⟩Dr. Nakamura⟨/NAME⟩`). Exact-span scoring counts this as both leak
+   and over-tag, but it is a **span-boundary quirk, not a judgment miss** — and arguably privacy-safe
+   (it tags more surrounding text, not less). This honorific-boundary behavior is new here; worth a
+   targeted data nudge (title outside the span) if it persists.
+
+## Read
+
+The point of this probe is generalization vs memorization. On surfaces the model has never seen — in
+training or in the standard eval — tuned v3 lifts recall 0.05→0.89, pass 0.53→0.89, and consistency
+0.00→0.90 while holding over-tag flat at 0.11 (vs 0.137 in-distribution). The perfect eponym/place/
+first-name scores on novel tokens are the strongest single signal that the model learned the *rule*, not
+the vocabulary. The two real residual over-tags (season-word, eponymous-possessive) match what v3's card
+already documents; the honorific-boundary behavior is the one new finding.
+
+## Caveats
+
+- **Directional; small n.** n=36 overall and several per-category cells are n=2–3, so per-category
+  numbers are suggestive, not conclusive; the overall recall/pass/consistency gaps are the load-bearing
+  result. (This probe reports point values from the run; unlike the main table it does not yet ship
+  bootstrap CIs — the reports are gitignored like the others and regenerate from the committed split.)
+- **Mac baseline, in-session-authored v3.** Same caveats as the v3 section: plain LoRA on an fp16→bf16
+  base (not 4-bit QLoRA), and v3's training data was authored in-session (teacher API unavailable). A
+  Colab 4-bit run re-baselines separately.
+- **Reproducible.** The split and its generator are committed; re-run the command above against any
+  adapter. Reports land in `data/eval_reports/` (gitignored).
 
 ---
 
