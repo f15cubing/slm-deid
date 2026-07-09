@@ -41,6 +41,17 @@ def training_backend_settings(backend: str) -> dict:
     }
 
 
+def select_amp_flags(bf16_supported: bool) -> dict:
+    """AMP precision for the CUDA/unsloth path: bf16 on Ampere+, else fp16.
+
+    A Tesla T4 (Turing, CUDA cap 7.5) has no bf16 support, and current transformers/TRL default
+    the trainer to bf16 on CUDA — which `TrainingArguments` then rejects ("needs Ampere+ GPU").
+    Setting the flag explicitly from the hardware keeps the run portable across T4 and A100 without
+    touching any LoRA hyperparameter (the frozen Day-4 config is unchanged).
+    """
+    return {"bf16": bool(bf16_supported), "fp16": not bf16_supported}
+
+
 def ensure_hf_base(base_model: str) -> None:
     """Reject a bitsandbytes 4-bit checkpoint on the hf backend (it needs CUDA to load)."""
     lowered = base_model.lower()
@@ -112,6 +123,12 @@ def train(cfg: dict, smoke: bool = False, output_dir: str | None = None) -> str:
     output_dir = (output_dir or cfg["output_dir"]) + ("-smoke" if smoke else "")
 
     settings = training_backend_settings(backend)
+    if backend == "unsloth":
+        import torch
+
+        bf16_ok = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+        # Explicit fp16/bf16 from hardware so a T4 (no bf16) dodges the trainer's CUDA bf16 default.
+        settings["sft_extra"] = {**settings["sft_extra"], **select_amp_flags(bf16_ok)}
 
     # Modern TRL: completion-only masking is built into SFTConfig (no data collator).
     trainer = SFTTrainer(
