@@ -101,6 +101,13 @@ _Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **OOD generalization probe (branch `worktree-ood-probe`, DRAFT PR — high-risk lane)** — new quarantined
+  `eval/ood_probe` (36 cases) built by `scripts/build_ood_probe.py`, with surfaces disjoint from **both**
+  the eval set and the training banks (guard in-script + `test_vocab`/`test_no_eval_leakage`). Base-vs-tuned
+  on `sft-v3-mps` (MPS bf16): **recall 0.05→0.89, pass 0.53→0.89, consistency 0.00→0.90, over-tag flat 0.11**
+  — mirrors in-distribution → judgment generalized, not memorized. Perfect eponym/place/first-name on novel
+  tokens. Two real residual over-tags (season-word, eponymous-possessive) + a new honorific-boundary quirk.
+  See `docs/results.md` → OOD probe. Eval-only, never fed to training; leakage guard green.
 - **[Day 6] Adversarial / break-it eval set (branch `worktree-agent-a90e544c94f5773f3`, DRAFT PR, NOT
   merged)** — 40 hand-built scenarios at `eval/adversarial/adversarial.jsonl` (built by
   `scripts/build_adversarial.py`, mirroring `build_hardcases.py`): 34 `adversarial` + 6 `negative_trap`,
