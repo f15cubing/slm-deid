@@ -19,8 +19,8 @@ SYSTEM_PROMPT = (
     f"1. Wrap every span that refers to a REAL PERSON'S NAME in {NAME_OPEN}…{NAME_CLOSE}.\n"
     "2. Tag EVERY mention of each personal name, including first-name-only mentions.\n"
     "3. Do NOT tag identically-spelled non-person uses: a method or unit named after "
-    "someone (\"the Newton method\", \"Newton's laws\"), a place (\"Chelsea\", \"Darwin\", "
-    "\"Florence\"), a common word (\"Grace\", \"Hope\", \"Bishop\"), a brand, or a course title.\n"
+    'someone ("the Newton method", "Newton\'s laws"), a place ("Chelsea", "Darwin", '
+    '"Florence"), a common word ("Grace", "Hope", "Bishop"), a brand, or a course title.\n'
     "4. Do NOT tag emails, phone numbers, IDs, dates, or URLs — those are handled elsewhere.\n"
     "5. Change NOTHING else. Return the input text byte-for-byte identical except for the "
     "inserted tags. Do not add, remove, reword, reorder, or reformat any other character.\n"
@@ -37,8 +37,10 @@ SHOWCASE = [
     ("I visited Chelsea last summer and loved it.", "Chelsea = place → don't tag"),
     ("Chelsea helped me revise my thesis statement.", "Chelsea = person → tag"),
     ("thanks, Sam — that explanation finally clicked", "first-name-only person → tag"),
-    ("My teacher Ms. Rivera said Grace is a virtue worth practicing.",
-     "Rivera = person → tag; Grace = concept → don't tag"),
+    (
+        "My teacher Ms. Rivera said Grace is a virtue worth practicing.",
+        "Rivera = person → tag; Grace = concept → don't tag",
+    ),
 ]
 
 

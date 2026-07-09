@@ -31,7 +31,8 @@ fixes the data.
 ## Training data (v3) — 927 train / 102 val
 Full card: `docs/dataset-card-v3.md`. What changed vs v2:
 - **Rebalanced `person_vs_common` to ~50/50** person/non-person (v2 was 18/38) via matched minimal pairs,
-  and **~doubled the eval-disjoint vocab bank** (53→110 tokens: 43 common / 32 places / 35 eponyms, `src/datagen/vocab.py`)
+  and **~doubled the eval-disjoint vocab bank** (53→110 tokens: 43 common / 32 places / 35 eponyms) at data-build time
+  (post-merge, `src/datagen/vocab.py` is the larger consolidated bank — ~167 tokens — used for future runs)
   so the model learns the contrast over many surfaces (generalization), not a handful.
 - **Scaled ~3.8×** (242 → 927 train). Sources: synthetic_teacher 777, real_crapii 109, presidio_faker 41.
   Registers 645 essay / 282 dialogue. Tagged 542 / untagged 385.

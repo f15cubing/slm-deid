@@ -39,9 +39,9 @@ class CheckResult:
 
     integrity_ok: bool
     well_formed: bool
-    missed: set[SpanKey] = field(default_factory=set)      # leakage (false negatives)
+    missed: set[SpanKey] = field(default_factory=set)  # leakage (false negatives)
     false_tags: set[SpanKey] = field(default_factory=set)  # over-tag (false positives)
-    matched: set[SpanKey] = field(default_factory=set)     # true positives
+    matched: set[SpanKey] = field(default_factory=set)  # true positives
 
     @property
     def leaked(self) -> bool:

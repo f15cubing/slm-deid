@@ -44,8 +44,7 @@ def test_build_dataset_gates_and_splits():
 def test_build_dataset_drops_verifier_disagreement():
     passage = f"{tags.wrap('Grace')} lent me notes, but she showed grace under pressure."
     disagree = (
-        f"{tags.wrap('Grace')} lent me notes, but she showed "
-        f"{tags.wrap('grace')} under pressure."
+        f"{tags.wrap('Grace')} lent me notes, but she showed {tags.wrap('grace')} under pressure."
     )
     teacher = TeacherGenerator(gen=lambda s, u: passage, verify=lambda s, u: disagree)
     cfg = DatagenConfig(category_counts={"person_vs_common": 5}, negatives=0, seed=1)
@@ -59,14 +58,24 @@ def test_deleak_and_split_drops_eval_matches(tmp_path):
     (tmp_path / "eval").mkdir()
     raw_eval = "Chelsea helped me revise my thesis."
     tgt_eval = f"{tags.wrap('Chelsea')} helped me revise my thesis."
-    ev = Example(id="e", input=raw_eval, target=tgt_eval, spans=[Span(0, 7, "Chelsea", True)],
-                 quarantine=True).validate()
+    ev = Example(
+        id="e",
+        input=raw_eval,
+        target=tgt_eval,
+        spans=[Span(0, 7, "Chelsea", True)],
+        quarantine=True,
+    ).validate()
     (tmp_path / "eval" / "hc.jsonl").write_text(dumps(ev) + "\n", encoding="utf-8")
 
-    leak = Example(id="leak", input=raw_eval, target=tgt_eval,
-                   spans=[Span(0, 7, "Chelsea", True)]).validate()
-    clean = Example(id="ok", input="Ada coded.", target=f"{tags.wrap('Ada')} coded.",
-                    spans=[Span(0, 3, "Ada", True)]).validate()
+    leak = Example(
+        id="leak", input=raw_eval, target=tgt_eval, spans=[Span(0, 7, "Chelsea", True)]
+    ).validate()
+    clean = Example(
+        id="ok",
+        input="Ada coded.",
+        target=f"{tags.wrap('Ada')} coded.",
+        spans=[Span(0, 3, "Ada", True)],
+    ).validate()
 
     train, val, n_leak = deleak_and_split(
         [leak, clean], eval_dir=str(tmp_path / "eval"), val_frac=0.0, seed=0
@@ -81,23 +90,31 @@ def test_token_leak_guard_drops_eval_token_overlap(tmp_path):
     # when its PASSAGE text matches no eval passage (the passage-level de-leak would miss it).
     (tmp_path / "eval").mkdir()
     ev = Example(
-        id="e", input="Chelsea helped me revise my thesis.",
+        id="e",
+        input="Chelsea helped me revise my thesis.",
         target=f"{tags.wrap('Chelsea')} helped me revise my thesis.",
-        spans=[Span(0, 7, "Chelsea", True)], quarantine=True,
+        spans=[Span(0, 7, "Chelsea", True)],
+        quarantine=True,
     ).validate()
     (tmp_path / "eval" / "hc.jsonl").write_text(dumps(ev) + "\n", encoding="utf-8")
 
     leak = Example(
-        id="leak", input="Chelsea explained recursion to the study group tonight.",
+        id="leak",
+        input="Chelsea explained recursion to the study group tonight.",
         target=f"{tags.wrap('Chelsea')} explained recursion to the study group tonight.",
-        spans=[Span(0, 7, "Chelsea", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Chelsea",
+        spans=[Span(0, 7, "Chelsea", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Chelsea",
     ).validate()
     clean = Example(
-        id="ok", input="Austin explained recursion to the study group tonight.",
+        id="ok",
+        input="Austin explained recursion to the study group tonight.",
         target=f"{tags.wrap('Austin')} explained recursion to the study group tonight.",
-        spans=[Span(0, 6, "Austin", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Austin",
+        spans=[Span(0, 6, "Austin", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Austin",
     ).validate()
 
     kept, dropped = drop_eval_token_overlap([leak, clean], eval_dir=str(tmp_path / "eval"))
@@ -110,16 +127,22 @@ def test_surface_guard_drops_any_eval_surface_in_passage():
     # ("Darwin") is dropped even though the intended ambiguous_token ("Sydney") is clean —
     # the intended-token-only guard would miss it.
     leak = Example(
-        id="leak", input="Charles Darwin sailed on the Beagle to Sydney.",
+        id="leak",
+        input="Charles Darwin sailed on the Beagle to Sydney.",
         target=f"{tags.wrap('Charles Darwin')} sailed on the Beagle to Sydney.",
-        spans=[Span(0, 14, "Charles Darwin", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Sydney",
+        spans=[Span(0, 14, "Charles Darwin", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Sydney",
     ).validate()
     clean = Example(
-        id="ok", input="Austin sailed on the Beagle to the harbor.",
+        id="ok",
+        input="Austin sailed on the Beagle to the harbor.",
         target=f"{tags.wrap('Austin')} sailed on the Beagle to the harbor.",
-        spans=[Span(0, 6, "Austin", True)], category="person_vs_place",
-        source="synthetic_teacher", ambiguous_token="Austin",
+        spans=[Span(0, 6, "Austin", True)],
+        category="person_vs_place",
+        source="synthetic_teacher",
+        ambiguous_token="Austin",
     ).validate()
     kept, dropped = drop_eval_surface_overlap([leak, clean])
     assert dropped == 1
@@ -138,8 +161,12 @@ def test_minimal_pair_disposition_drops_bad_pairs():
 
     teacher = TeacherGenerator(gen=gen, verify=None)
     cfg = DatagenConfig(
-        minimal_pairs={"person_vs_place": 3}, category_counts={}, negatives=0,
-        seed=0, val_frac=0.0, eval_dir="___nodir___",
+        minimal_pairs={"person_vs_place": 3},
+        category_counts={},
+        negatives=0,
+        seed=0,
+        val_frac=0.0,
+        eval_dir="___nodir___",
     )
     train, val, drops = build_dataset(cfg, teacher)
     assert len(train) + len(val) == 0
@@ -216,9 +243,14 @@ def test_build_dataset_folds_in_crapii_slice(tmp_path):
     p.write_text(json.dumps(rec) + "\n", encoding="utf-8")
 
     cfg = DatagenConfig(
-        minimal_pairs={}, category_counts={}, negatives=0, seed=0, val_frac=0.0,
+        minimal_pairs={},
+        category_counts={},
+        negatives=0,
+        seed=0,
+        val_frac=0.0,
         eval_dir=str(tmp_path / "noeval"),  # no eval dir -> guards use static BLOCKLIST only
-        crapii_path=str(p), crapii_limit=10,
+        crapii_path=str(p),
+        crapii_limit=10,
     )
     train, val, _ = build_dataset(cfg, _pair_mock_teacher())
     got = train + val

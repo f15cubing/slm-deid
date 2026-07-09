@@ -7,22 +7,24 @@
 # possessive 1). Tokens come from the curated, eval-DISJOINT bank in src/datagen/vocab.py, so this
 # stays a clean generalization test (see docs/error-analysis-v1.md).
 #
-# `scale` multiplies every count below — the ONE knob to size the run. v3 scale-up: the recipe is
-# the balanced per-batch unit; the larger set is built by running 1-2 batches (distinct --seed,
-# --temperature 0.8) and merging with the CRAPII real slice. Minimal pairs are 50/50
-# person/non-person by construction — leaning on them (over the withhold-only negatives) is what
+# `scale` multiplies every count below — the ONE knob to size the run. Minimal pairs are 50/50
+# person/non-person by construction; leaning on them (over the withhold-only negatives) is what
 # rebalances person_vs_common toward person-use and recovers recall/consistency (v2 was 18 tag / 38
-# withhold there). CRAPII is folded in at MERGE time (not here) so it is added exactly once.
-# Run (v3 was built with the in-session authored teacher, teacher API being down):
+# withhold). The vocab bank is large (src/datagen/vocab.py), so raising `scale` buys DIVERSITY (low
+# per-token reuse), not repeats. CRAPII is folded in at MERGE time (not here) so it is added once.
+# The committed v3 splits (927/102) were built at scale 2.0 with the in-session AUTHORED teacher
+# (the gpt-4o key was billing-blocked). Rebuild — or run a canonical live-teacher pass — with:
 #   python -m src.datagen.generate --config configs/datagen.yaml --provider authored --seed 1 --out-dir data/_b1
-# (`--provider openai/anthropic` also work when a teacher key is available.)
+#   python -m src.datagen.merge --out data --sources data/_b1/splits/train.jsonl data/_b1/splits/val.jsonl --crapii data/raw/cleaned_repository_pii_train.json --crapii-limit 150
+# (`--provider openai/anthropic` also work when a teacher key is available; ~2 gpt-4o calls/example.)
 scale: 2.0
 
 # --- matched minimal pairs (each entry = number of PAIRS; each pair -> 2 examples) --------
 # Weighted toward the weakest categories. `person_vs_common` is bumped hardest (the recall/
 # consistency regression); `possessive` up to counter its v2 collapse (n=1). Pairs draw from the
 # expanded eval-disjoint bank (vocab.py: 43 common / 32 places / 35 eponyms) so the model learns
-# the person-vs-non-person contrast over MANY surfaces rather than memorizing a handful.
+# the person-vs-non-person contrast over MANY surfaces (see the bank in src/datagen/vocab.py)
+# rather than memorizing a handful.
 minimal_pairs:
   person_vs_common: 70
   person_vs_place: 55

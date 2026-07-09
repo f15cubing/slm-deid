@@ -128,7 +128,7 @@ class Example:
             if self.input[s.start : s.end] != s.text:
                 raise SchemaError(
                     f"{self.id}: span text {s.text!r} != input[{s.start}:{s.end}]"
-                    f" ({self.input[s.start:s.end]!r})"
+                    f" ({self.input[s.start : s.end]!r})"
                 )
 
         # The set of tagged spans in target must equal exactly the is_name gold spans.

@@ -18,7 +18,7 @@ def test_parse_tagged_derives_input_target_spans():
     assert raw == "We used the Newton method, but Newton himself would frown."
     assert target == text
     assert [s.text for s in spans] == ["Newton"]
-    assert raw[spans[0].start:spans[0].end] == "Newton"
+    assert raw[spans[0].start : spans[0].end] == "Newton"
 
 
 def test_parse_strips_code_fences():
@@ -78,9 +78,7 @@ def test_generate_minimal_pair_possessive_person_vs_eponymous():
         return "Joule's law relates power to current and resistance."
 
     t = TeacherGenerator(gen=gen)
-    person, nonperson = t.generate_pair(
-        "possessive", person_token="Joy", nonperson_token="Joule"
-    )
+    person, nonperson = t.generate_pair("possessive", person_token="Joy", nonperson_token="Joule")
     assert person.ambiguous_token == "Joy" and nonperson.ambiguous_token == "Joule"
     assert [s.text for s in person.name_spans()] == ["Joy"]
     assert nonperson.name_spans() == []
@@ -89,6 +87,7 @@ def test_generate_minimal_pair_possessive_person_vs_eponymous():
 
 def test_second_pass_disagreement_dropped():
     raw_tagged = f"{tags.wrap('Grace')} lent me her notes, but she showed grace under pressure."
+
     # verifier wrongly tags the concept "grace" too -> disagreement -> gate drops it
     def verify(s, u):
         return (

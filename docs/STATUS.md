@@ -3,12 +3,27 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-08 — v3 data-rebalance DONE (branch `agent/datagen-v2-run`, unmerged): rebalanced+scaled data (927/102) fixes v2's regression — recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86, over_tag/integrity held. Data authored in-session (teacher API down). See `docs/model-card-v3.md`, `docs/results.md`→v3._
+_Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto the consolidated `main`. v3 now has REAL numbers on MPS bf16: recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86 (over_tag/integrity held) — see `docs/results.md`→v3, `docs/model-card-v3.md`. The teacher-key blocker is bypassed by the in-session AUTHORED teacher (`--provider authored`), so Colab can generate with NO key. Pending: the canonical live-teacher 4-bit QLoRA run on Colab (re-baselines vs MPS bf16). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
+- **v3 training set up for Colab (4-bit QLoRA).** Consolidated `agent/datagen-v2-run` +
+  `worktree-testset-review-ui` + `agent/infra-code-quality-loop` onto `main` (124 passed, 2 skipped).
+  Added `notebooks/v3_colab_train_eval.ipynb`: clones `main` → generates the v3 dataset from the frozen
+  `configs/datagen.yaml` recipe at `scale=3.0` (~1,530 raw → ~800–1k kept; a step up from v2's 268) +
+  folds in the committed co-occurrence contrast set + CRAPII slice, all under the same eval-leakage
+  guards → trains the **frozen** `configs/train.yaml` QLoRA → base-vs-tuned on the 51 hard cases →
+  persists adapter/reports/splits to Drive. Data changes only; hyperparameters frozen (Day-4 rule).
+  Blocker to actually generate: the teacher (`gpt-4o`) key returns `billing_not_active` — Colab needs a
+  live OpenAI or Anthropic key, else run with `GENERATE=False` on the committed v2 splits.
+- **Code-quality loop (`make check` + CI)** — `Makefile` gate (ruff `check` + `format --check` + `pytest`)
+  and a GitHub Actions `code-quality` workflow running the same on every push/PR. Made the baseline green:
+  `ruff format` on `src/`+`tests/` and excluded exploratory `notebooks/` from the linter (`pyproject.toml`).
+  Project skills mirrored to `.claude/skills/` (symlinks into `.cursor/skills/`) so Claude Code discovers
+  `shipping-changes` + `building-and-testing` too. CI installs only the CPU deps the hermetic suite uses
+  (ruff/pytest/torch/faker). 124 passed, 2 skipped.
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
 - Project scaffold: `README.md`, `.gitignore`, `requirements.txt`.
-- Agent workflow: `AGENTS.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.
+- Agent workflow: `CLAUDE.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.
 - `docs/plan.md` (one-week build plan) + `docs/agent-workflow-starter-kit.md` (workflow reference).
 - `docs/brainlift.md` (BrainLift v3 — source of truth: mandate, scope, DOK 1–4, spiky POVs).
 - `docs/tasks/` — per-day specs (day-1..7) + shared repo/schema contract (`docs/tasks/README.md`).
@@ -51,17 +66,19 @@ _Last updated: 2026-07-08 — v3 data-rebalance DONE (branch `agent/datagen-v2-r
   written read. Regression test + CLI guard reject any report where an all-named category has recall 0 with
   pass>0.
 
+## Done (recent)
+- **[v3] data-rebalance retrain + re-eval — MERGED to `main`** (independent-agent review passed; reconciled
+  with main's parallel v3 consolidation). Fixes v2's recall/consistency regression **in the data**:
+  rebalanced `person_vs_common` to ~50/50 (v2 was 18/38), consolidated eval-disjoint vocab bank (~167
+  tokens), scaled 242→927 train; retrained bf16 → `outputs/sft-v3-mps`. **base→tuned: recall 0.185→0.926,
+  F5 0.190→0.919, consistency 0.250→0.750, leakage 0.412→0.039, pass 0.549→0.863, integrity→0.000, over_tag
+  held 0.137** (CIs separated on recall/F5/leakage). Residual: eponymous-possessive over-tag + one pronoun
+  tag. **Caveat:** teacher API was down, so v3 data authored in-session (`src/datagen/author.py`,
+  `--provider authored`, now the keyless default on Colab) — no independent verifier pass, template text
+  less varied (a frontier-teacher/canonical 4-bit run is the follow-up). Leakage 0 (3 guards + scan). Cards:
+  `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
+
 ## In flight
-- **[v3] data-rebalance retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — fixes v2's
-  recall/consistency regression **in the data**. Rebalanced `person_vs_common` to ~50/50 (v2 was 18/38),
-  ~doubled the eval-disjoint vocab bank (53→110), scaled 242→927 train; retrained bf16 → `outputs/sft-v3-mps`.
-  **base→tuned: recall 0.185→0.926, F5 0.190→0.919, consistency 0.250→0.750, leakage 0.412→0.039,
-  pass 0.549→0.863, integrity→0.000, over_tag held 0.137** (CIs separated on recall/F5/leakage). Residual:
-  eponymous-possessive over-tag ("Newton's laws") + one pronoun tag. **Caveat:** teacher API was down, so
-  data authored in-session (`src/datagen/author.py`, `--provider authored`) — no independent verifier
-  pass, template text less varied (a frontier-teacher regen is the follow-up). Leakage 0 (3 guards +
-  independent scan). Cards: `docs/model-card-v3.md`, `docs/dataset-card-v3.md`. Not shipped (high-risk
-  lane; needs separate-agent review before merge).
 - **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
   (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
   base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020

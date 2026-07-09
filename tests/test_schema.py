@@ -16,7 +16,7 @@ def make_valid() -> Example:
         register="dialogue",
         category="person_vs_place",
         spans=[
-            Span(0, 7, "Chelsea", True),    # the person
+            Span(0, 7, "Chelsea", True),  # the person
             Span(33, 40, "Chelsea", False),  # the place
         ],
         source="handbuilt",
@@ -85,8 +85,12 @@ def test_ambiguous_token_defaults_none_and_roundtrips():
 def test_legacy_row_without_ambiguous_token_loads():
     # rows written before the field existed (e.g. data/splits/*) must still deserialize.
     legacy = Example.from_dict(
-        {"id": "x", "input": "Ada coded.", "target": f"{tags.wrap('Ada')} coded.",
-         "spans": [{"start": 0, "end": 3, "text": "Ada", "is_name": True}]}
+        {
+            "id": "x",
+            "input": "Ada coded.",
+            "target": f"{tags.wrap('Ada')} coded.",
+            "spans": [{"start": 0, "end": 3, "text": "Ada", "is_name": True}],
+        }
     )
     assert legacy.ambiguous_token is None
     legacy.validate()

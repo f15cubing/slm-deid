@@ -22,8 +22,8 @@ from dataclasses import dataclass
 # (OPEN=3 / CLOSE=4 tokens; 8 per tagged span) and are not special tokens — a deliberate
 # collision-safety-over-efficiency trade. Integrity still holds (lossless round-trip). Pinned by
 # tests/test_tag_tokenization.py; the 1-token variant (added special tokens) is a v-next A/B.
-NAME_OPEN = "\u27e8NAME\u27e9"      # ⟨NAME⟩
-NAME_CLOSE = "\u27e8/NAME\u27e9"    # ⟨/NAME⟩
+NAME_OPEN = "\u27e8NAME\u27e9"  # ⟨NAME⟩
+NAME_CLOSE = "\u27e8/NAME\u27e9"  # ⟨/NAME⟩
 
 # Matches one well-formed, non-nested tagged span; group "name" is the inner text.
 _SPAN_RE = re.compile(
@@ -90,7 +90,7 @@ def tagged_spans(tagged: str) -> list[TaggedSpan]:
     """
     spans: list[TaggedSpan] = []
     raw_cursor = 0  # position in the unwrapped string
-    last_end = 0    # position in the tagged string we've consumed up to
+    last_end = 0  # position in the tagged string we've consumed up to
     for m in _SPAN_RE.finditer(tagged):
         # advance raw_cursor by the untagged text between the previous match and this one
         between = unwrap(tagged[last_end : m.start()])

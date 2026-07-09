@@ -4,7 +4,7 @@
 **eval exists before any real training**. This is the hard rule — nothing on Day 3 starts until the
 eval and behavioral checks are committed and green.
 
-> **Ceiling reminders (AGENTS.md):** eval before train; the `eval/hardcases/` set is quarantined and
+> **Ceiling reminders (CLAUDE.md):** eval before train; the `eval/hardcases/` set is quarantined and
 > never touched by data-gen; integrity (`unwrap(output)==input`) is a reject condition.
 
 ## Specs (definition of done)

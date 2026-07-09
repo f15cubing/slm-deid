@@ -49,3 +49,9 @@ secrets/
 .DS_Store
 .idea/
 *.swp
+
+# Claude Code (keep committed skills in .claude/skills/; ignore local/session state)
+.claude/settings.local.json
+.claude/worktrees/
+.claude/todos/
+.claude/projects/

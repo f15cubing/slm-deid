@@ -3,7 +3,7 @@
 # base-vs-tuned stays comparable (frozen since Day 4: fix data, not hyperparameters).
 # NOTE: this path 4-bit-quantizes the base, so its base-vs-tuned numbers RE-BASELINE vs the Mac
 # bf16 runs (v2/v3) — report Colab numbers as their own line, don't reuse the MPS ones.
-# Used by notebooks/colab_v3_qlora.ipynb to reproduce v3 on Colab. Override --output-dir per run.
+# Used by notebooks/v3_colab_train_eval.ipynb to reproduce v3 on Colab. Override --output-dir per run.
 base_model: unsloth/Qwen3-1.7B-unsloth-bnb-4bit
 max_seq_len: 2048
 
