@@ -52,6 +52,26 @@ def select_amp_flags(bf16_supported: bool) -> dict:
     return {"bf16": bool(bf16_supported), "fp16": not bf16_supported}
 
 
+def sft_eos_token_kwarg(sft_config_cls, tokenizer) -> dict:
+    """`{"eos_token": <real eos>}` when SFTConfig has that field, else `{}`.
+
+    Current TRL's ``SFTConfig`` defaults ``eos_token`` to the placeholder ``'<EOS_TOKEN>'``, not in
+    Qwen's vocab, so ``SFTTrainer`` init rejects it. Pin it to the tokenizer's actual ``eos_token``
+    (the correct stop token for completion-only training). Older TRL has no such field, so we probe
+    the dataclass fields and no-op when absent — keeping the MPS path unbroken.
+    """
+    import dataclasses
+
+    eos = getattr(tokenizer, "eos_token", None)
+    if not eos:
+        return {}
+    try:
+        names = {f.name for f in dataclasses.fields(sft_config_cls)}
+    except TypeError:
+        names = set(dir(sft_config_cls))
+    return {"eos_token": eos} if "eos_token" in names else {}
+
+
 def ensure_hf_base(base_model: str) -> None:
     """Reject a bitsandbytes 4-bit checkpoint on the hf backend (it needs CUDA to load)."""
     lowered = base_model.lower()
@@ -151,6 +171,7 @@ def train(cfg: dict, smoke: bool = False, output_dir: str | None = None) -> str:
             optim=settings["optim"],
             output_dir=output_dir,
             report_to="none",
+            **sft_eos_token_kwarg(SFTConfig, tokenizer),
             **settings["sft_extra"],
         ),
     )
