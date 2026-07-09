@@ -31,6 +31,17 @@ def test_generic_id():
     assert ("ID", "STU00081234") in _labels("student STU00081234 enrolled")
 
 
+def test_id_does_not_match_ordinary_numbers():
+    # Scores, populations, decimals, version-ish digit runs are NOT identifiers.
+    for text in ("scored 12345 points", "a city of 100000 people", "pi is 3.14159"):
+        assert not any(s.label == "ID" for s in patterns.detect(text)), text
+
+
+def test_ip_rejects_out_of_range_octets():
+    assert not any(s.label == "IP" for s in patterns.detect("build 999.1.1.1 failed"))
+    assert ("IP", "192.168.0.1") in _labels("host 192.168.0.1 down")
+
+
 def test_trailing_punctuation_trimmed():
     (span,) = [s for s in patterns.detect("mail me: sam@school.edu.") if s.label == "EMAIL"]
     assert span.text == "sam@school.edu"

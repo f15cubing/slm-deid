@@ -76,3 +76,33 @@ def test_overlapping_projected_spans_stay_well_formed():
     out = project.project_tags(original, model)
     assert tags.is_well_formed(out)
     assert tags.unwrap(out) == original
+
+
+def test_drifted_tag_does_not_span_unrelated_region():
+    # Severe drift: the model collapses two far-apart 'Q's into one short tagged token.
+    # Projection must NOT stretch a single tag across the content between them.
+    original = "Q was here. " + "filler words in between. " * 3 + "Then Q left."
+    model = "⟨NAME⟩QQ⟨/NAME⟩"
+    result = project.project(original, model)
+    assert tags.unwrap(result.tagged) == original
+    assert all(s.end - s.start <= 2 for s in result.spans)  # two tiny 'Q' spans, not one huge one
+    assert "filler" not in " ".join(s.text for s in result.spans)
+
+
+def test_drifted_tag_does_not_coincidentally_hit_a_gold_span():
+    # A garbage judgment "Sy" whose chars align to the 'S' and 'y' of a distant real name must
+    # NOT project onto the whole "Sally" span (which would score as a false true-positive and
+    # dishonestly inflate recall). The gap between them is content, so it splits.
+    original = "Sam ate. " + "x" * 40 + " Sally ran."
+    model = "Sam ate. ⟨NAME⟩Sy⟨/NAME⟩"
+    spans = project.project_spans(original, model)
+    assert all(s.text != "Sally" for s in spans)
+
+
+def test_name_with_collapsed_internal_whitespace_stays_one_span():
+    # The whitespace-only gap IS bridged, so a name the model de-double-spaced stays whole.
+    original = "Mary  Jane presented."  # double space inside the name
+    model = "⟨NAME⟩Mary Jane⟨/NAME⟩ presented."
+    result = project.project(original, model)
+    assert tags.unwrap(result.tagged) == original
+    assert [s.text for s in result.spans] == ["Mary  Jane"]
