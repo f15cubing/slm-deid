@@ -36,28 +36,40 @@ Drive (`MyDrive/slm-deid-v3/`). Trained + evaluated 2026-07-09._
 
 ## Overall
 
-_Point values transcribed from the Colab `compare()` output. The CI-annotated table + full per-category
-breakdown regenerate offline from the Drive-persisted reports via `python -m src.eval.report base=… tuned=…`
-once they're pulled back locally (they were not committed — `outputs/` is gitignored)._
+_Now **generated from the committed reports** (the run's `base`/`tuned` JSON was pulled back from Drive
+and placed at `outputs/eval_reports_colab_authored/`), with 95% percentile bootstrap CIs._
+
+<!-- Regenerate (offline, no model / no network) with:
+python -m src.eval.report \
+  base=outputs/eval_reports_colab_authored/base-20260709-201817.json \
+  tuned=outputs/eval_reports_colab_authored/tuned-v3-20260709-201929.json -->
 
 | model | n | precision | recall | F5 | leakage_rate | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
 |---|---|---|---|---|---|---|---|---|---|
-| base | 51 | 0.357 | 0.556 | 0.544 | 0.235 | 0.529 | 0.549 | 0.392 | 0.250 |
-| tuned-v3 | 51 | 0.929 | 0.963 | 0.962 | 0.020 | 0.039 | 0.000 | 0.961 | 0.938 |
+| base | 51 | 0.357 [0.21, 0.51] | 0.556 [0.36, 0.73] | 0.544 [0.35, 0.72] | 0.235 [0.14, 0.35] | 0.529 [0.39, 0.65] | 0.549 [0.41, 0.67] | 0.392 [0.27, 0.53] | 0.250 |
+| tuned-v3 | 51 | 0.929 [0.82, 1.00] | 0.963 [0.87, 1.00] | 0.962 [0.87, 1.00] | 0.020 [0.00, 0.06] | 0.039 [0.00, 0.10] | 0.000 [0.00, 0.00] | 0.961 [0.90, 1.00] | 0.938 |
 | Δ (tuned−base) |  | +0.572 | +0.407 | +0.418 | -0.216 | -0.490 | -0.549 | +0.569 | +0.688 |
 
-## Per-category (F5 / over_tag_rate, base → tuned-v3)
+## Per-category (base → tuned-v3, with 95% bootstrap CIs)
 
-| category | n | F5 (base → tuned) | over_tag_rate (base → tuned) |
-|---|---|---|---|
-| person_vs_common | 16 | 0.73 → **1.00** | 0.50 → **0.00** |
-| person_vs_place | 10 | 0.78 → **0.99** | 0.40 → **0.10** |
-| person_vs_eponym | 8 | 0.63 → **1.00** | 0.75 → **0.00** |
-| first_name_only | 3 | 0.00 → **1.00** | 1.00 → **0.00** |
-| third_party | 3 | 0.00 → **1.00** | 1.00 → **0.00** |
-| possessive | 3 | 0.96 → **1.00** | 0.33 → **0.00** |
-| easy | 3 | 0.50 → **0.75** | 0.67 → **0.33** |
-| negative_trap | 5 | 0.00 → 0.00 | 0.00 → 0.00 |
+| category | n | model | recall | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|
+| person_vs_common | 16 | base | 0.750 [0.40, 1.00] | 0.500 [0.25, 0.75] | 0.500 [0.25, 0.75] | 0.438 [0.19, 0.69] | 0.125 |
+| person_vs_common | 16 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | 1.000 |
+| person_vs_place | 10 | base | 0.800 [0.33, 1.00] | 0.400 [0.10, 0.70] | 0.400 [0.10, 0.70] | 0.600 [0.30, 0.90] | 0.500 |
+| person_vs_place | 10 | tuned | 1.000 [1.00, 1.00] | 0.100 [0.00, 0.30] | 0.000 [0.00, 0.00] | 0.900 [0.70, 1.00] | 0.750 |
+| person_vs_eponym | 8 | base | 0.667 [0.00, 1.00] | 0.750 [0.38, 1.00] | 0.500 [0.12, 0.88] | 0.250 [0.00, 0.62] | 0.333 |
+| person_vs_eponym | 8 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | 1.000 |
+| first_name_only | 3 | base | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | – |
+| first_name_only | 3 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| possessive | 3 | base | 1.000 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.667 [0.00, 1.00] | 0.000 |
+| possessive | 3 | tuned | 1.000 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | 1.000 |
+| third_party | 3 | base | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | – |
+| third_party | 3 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| negative_trap | 5 | base | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.600 [0.20, 1.00] | 0.400 [0.00, 0.80] | – |
+| negative_trap | 5 | tuned | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| easy | 3 | base | 0.500 [0.00, 1.00] | 0.667 [0.00, 1.00] | 0.667 [0.00, 1.00] | 0.333 [0.00, 1.00] | – |
+| easy | 3 | tuned | 0.750 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.667 [0.00, 1.00] | – |
 
 ## The read (honest: a decisive win, ceilings held)
 
@@ -82,14 +94,16 @@ once they're pulled back locally (they were not committed — `outputs/` is giti
 ## Caveats (v3-colab)
 
 - **Small n, single seed.** n=51; per-category cells are n=3–16. The overall
-  recall/F5/leakage/over_tag/integrity/consistency gaps are the robust ones; treat per-category deltas as
-  suggestive (CIs not computed here — regenerate from the Drive reports for the `[low, high]` bands).
+  recall/F5/leakage/over_tag/integrity/consistency gaps are the robust ones (their CIs separate cleanly);
+  treat per-category deltas as suggestive — the n=3 cells have `[0.00, 1.00]`-wide bands.
 - **In-session authored data.** Passages were authored from templates (`src/datagen/author.py`), routed
   through the same quality gate + leakage guards — **no independent frontier-teacher verifier pass**.
   Template text is less linguistically varied than a live teacher's; a canonical live-teacher 4-bit run
   (`--provider openai/anthropic`) remains the follow-up. See the model card caveat.
-- **Point values only committed.** The CI-annotated table + full per-category recall/pass/integrity table
-  regenerate from `MyDrive/slm-deid-v3/eval_reports/{base,tuned}-*.json` (not in git).
+- **Reports pulled back local.** The `base`/`tuned` JSON now live at `outputs/eval_reports_colab_authored/`
+  (git-ignored like all `outputs/`); the tables above regenerate offline via `python -m src.eval.report`.
+  The adapter + exact splits are alongside at `outputs/sft-v3-colab-authored/`. Original Drive copy:
+  `MyDrive/slm-deid-authored/` (renamed from `slm-deid-v3/` so the next run can't overwrite it).
 
 ---
 
