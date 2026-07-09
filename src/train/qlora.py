@@ -51,8 +51,13 @@ def ensure_hf_base(base_model: str) -> None:
         )
 
 
-def train(cfg: dict, smoke: bool = False) -> str:
-    """Run QLoRA/LoRA training; returns the output adapter dir."""
+def train(cfg: dict, smoke: bool = False, output_dir: str | None = None) -> str:
+    """Run QLoRA/LoRA training; returns the output adapter dir.
+
+    ``output_dir`` overrides ``cfg["output_dir"]`` without editing the config, so successive
+    data iterations (v1 -> v2) can be saved side by side while the training config stays
+    byte-identical (Day-4 rule S4.4: only the data changes).
+    """
     from trl import SFTConfig, SFTTrainer
 
     from src.common.device import detect_backend, pick_device
@@ -104,7 +109,7 @@ def train(cfg: dict, smoke: bool = False) -> str:
     epochs = 1 if smoke else cfg["num_train_epochs"]
     if smoke:
         ds = ds.select(range(min(len(ds), 50)))
-    output_dir = cfg["output_dir"] + ("-smoke" if smoke else "")
+    output_dir = (output_dir or cfg["output_dir"]) + ("-smoke" if smoke else "")
 
     settings = training_backend_settings(backend)
 
@@ -115,7 +120,7 @@ def train(cfg: dict, smoke: bool = False) -> str:
         train_dataset=ds,
         peft_config=peft_config,  # None on unsloth (already wrapped); LoraConfig on hf
         args=SFTConfig(
-            completion_only_loss=True,   # loss on the tagged completion only
+            completion_only_loss=True,  # loss on the tagged completion only
             max_length=cfg["max_seq_len"],
             per_device_train_batch_size=cfg["per_device_train_batch_size"],
             gradient_accumulation_steps=cfg["gradient_accumulation_steps"],
@@ -143,8 +148,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/train.yaml")
     ap.add_argument("--smoke", action="store_true", help="1-epoch tiny run to test the loop")
+    ap.add_argument(
+        "--output-dir",
+        default=None,
+        help="override cfg output_dir (keeps the config byte-identical across data iterations)",
+    )
     args = ap.parse_args()
-    train(load_config(args.config), smoke=args.smoke)
+    train(load_config(args.config), smoke=args.smoke, output_dir=args.output_dir)
 
 
 if __name__ == "__main__":

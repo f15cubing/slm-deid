@@ -18,17 +18,24 @@ def _fake(payload: dict):
 
 
 def test_parse_tolerates_prose_and_fences():
-    raw = "Sure!\n```json\n{\"spec_adherence\": 2, \"robustness\": 1}\n```\nDone."
+    raw = 'Sure!\n```json\n{"spec_adherence": 2, "robustness": 1}\n```\nDone.'
     d = parse_judge_json(raw)
     assert d["spec_adherence"] == 2 and d["robustness"] == 1
 
 
 def test_perfect_output_agrees_with_behavioral():
     ex = _ex()
-    judge = LLMJudge(_fake({
-        "spec_adherence": 2, "robustness": 2, "task_quality": 2,
-        "consistency": 2, "rationale": "ok",
-    }))
+    judge = LLMJudge(
+        _fake(
+            {
+                "spec_adherence": 2,
+                "robustness": 2,
+                "task_quality": 2,
+                "consistency": 2,
+                "rationale": "ok",
+            }
+        )
+    )
     s = judge.score(ex, ex.target)
     assert isinstance(s, JudgeScore)
     assert s.total == 8
@@ -40,9 +47,9 @@ def test_disagreement_flagged_when_judge_too_generous():
     ex = _ex()
     # Model leaked the name (integrity ok but under-tagged) -> behavioral FAIL,
     # but the judge wrongly says spec_adherence=2 -> disagreement must be flagged.
-    judge = LLMJudge(_fake(
-        {"spec_adherence": 2, "robustness": 2, "task_quality": 2, "consistency": 2}
-    ))
+    judge = LLMJudge(
+        _fake({"spec_adherence": 2, "robustness": 2, "task_quality": 2, "consistency": 2})
+    )
     s = judge.score(ex, ex.input)  # nothing tagged
     assert s.behavioral_pass is False
     assert s.disagreement is True
@@ -50,9 +57,16 @@ def test_disagreement_flagged_when_judge_too_generous():
 
 def test_scores_clamped_to_0_2():
     ex = _ex()
-    judge = LLMJudge(_fake({
-        "spec_adherence": 5, "robustness": -3, "task_quality": "2", "consistency": None,
-    }))
+    judge = LLMJudge(
+        _fake(
+            {
+                "spec_adherence": 5,
+                "robustness": -3,
+                "task_quality": "2",
+                "consistency": None,
+            }
+        )
+    )
     s = judge.score(ex, ex.target)
     assert s.spec_adherence == 2
     assert s.robustness == 0

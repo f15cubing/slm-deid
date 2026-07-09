@@ -7,6 +7,11 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+# Exploratory scratch: notebooks are for interactive exploration, not shipped code.
+# Long printed cells and one-off imports are expected there, so the code-quality gate
+# skips them (they're re-run by hand, not by CI). Everything under src/, tests/, scripts/
+# is held to the full gate.
+extend-exclude = ["notebooks", ".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -14,3 +19,6 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 # Data-authoring files: long inline scenario strings are clearer on one line.
 "scripts/build_hardcases.py" = ["E501"]
+# Embedded HTML/CSS/JS template served by the local review UI — long style/markup
+# lines are the natural form and wrapping them hurts readability.
+"scripts/review_ui.py" = ["E501"]

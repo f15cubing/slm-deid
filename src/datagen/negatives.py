@@ -57,7 +57,7 @@ def generate_negatives(n: int = 20, seed: int = 0) -> list[Example]:
             tmpl = _MIXED_TEMPLATES[i % len(_MIXED_TEMPLATES)]
             raw = tmpl.format(name=name, pii=pii)
             start = raw.index(name)
-            target = raw[:start] + tags.wrap(name) + raw[start + len(name):]
+            target = raw[:start] + tags.wrap(name) + raw[start + len(name) :]
             spans = [Span(start, start + len(name), name, True)]
             category = "easy"
         else:

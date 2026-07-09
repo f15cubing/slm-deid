@@ -2,7 +2,7 @@
 
 Fails if any quarantined eval input also appears in a training split. Also asserts the eval set
 itself is schema-valid and flagged quarantine=true. This is the automated enforcement of the
-AGENTS.md ceiling "never leak the eval set into data generation or training".
+CLAUDE.md ceiling "never leak the eval set into data generation or training".
 """
 
 import re
@@ -41,9 +41,7 @@ def test_eval_set_exists_and_is_valid_and_quarantined():
 
 
 def test_no_eval_input_appears_in_training_splits():
-    eval_inputs = {
-        _norm(ex.input) for f in _eval_files() for ex in read_jsonl(f)
-    }
+    eval_inputs = {_norm(ex.input) for f in _eval_files() for ex in read_jsonl(f)}
     train_files = [p for g in TRAIN_GLOBS for p in REPO.glob(g)]
     if not train_files:
         pytest.skip("no training splits yet — guard is a no-op until Day 3 data exists")

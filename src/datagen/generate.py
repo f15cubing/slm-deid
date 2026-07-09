@@ -12,6 +12,7 @@ and builds a real teacher via the lazy OpenAI/Anthropic factories in `src.eval.j
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import re
 from dataclasses import dataclass, field
@@ -38,6 +39,12 @@ class DatagenConfig:
     val_frac: float = 0.1
     out_dir: str = "data"
     eval_dir: str = "eval"
+    # Optional real slice (CRAPII). Off unless a path is provided. Routed through the SAME quality
+    # gate + leakage guards as synthetic data; keep it SMALL (NAME_STUDENT under-tags non-students —
+    # see src/datagen/real_data.py). Not committed; download to data/raw/ (Kaggle/Zenodo).
+    crapii_path: str | None = None
+    crapii_limit: int = 0
+    crapii_max_chars: int = 2000
 
 
 def _scaled(count: int, scale: float) -> int:
@@ -100,6 +107,30 @@ def drop_eval_token_overlap(
     return kept, dropped
 
 
+def drop_eval_surface_overlap(examples: list[Example]) -> tuple[list[Example], int]:
+    """Passage-level eval-surface guard (Day-4 hardening; a hard ceiling).
+
+    Drops any example whose passage contains ANY eval ambiguous surface anywhere (tagged or
+    not) — not just the intended ``ambiguous_token``. This closes the hole where the teacher
+    invents a famous person (e.g. 'Charles Darwin') whose surname is an eval token, which the
+    intended-token-only :func:`drop_eval_token_overlap` misses. Static (uses ``vocab.BLOCKLIST``).
+    """
+    kept: list[Example] = []
+    dropped = 0
+    for ex in examples:
+        if vocab.blocklist_surfaces_in(ex.input):
+            dropped += 1
+            continue
+        kept.append(ex)
+    return kept, dropped
+
+
+def _token_in_names(ex: Example, token: str) -> bool:
+    """True iff ``token`` appears inside any tagged name span of ``ex``."""
+    names = " ".join(s.text for s in ex.name_spans()).lower()
+    return token.lower() in names
+
+
 def build_dataset(
     cfg: DatagenConfig,
     teacher: TeacherGenerator,
@@ -108,10 +139,13 @@ def build_dataset(
     raw: list[Example] = []
     verifier_targets: list[str | None] = []
     rng = random.Random(cfg.seed)
+    n_disposition = 0
 
     # 1) matched minimal pairs — person [tagged] vs identical non-person [untagged]. Tokens come
     #    from the curated, eval-DISJOINT bank; possessive pairs contrast a person's possessive
-    #    with an eponymous possessive negative (distinct eponym token).
+    #    with an eponymous possessive negative (distinct eponym token). Disposition is enforced:
+    #    the person half must tag its own token; the non-person half must tag NOTHING (a clean
+    #    withhold, and no stray famous-name that could leak an eval surface). Bad pairs are dropped.
     for category, n_pairs in cfg.minimal_pairs.items():
         tokens = list(vocab.tokens_for(category))
         if not tokens:
@@ -122,12 +156,17 @@ def build_dataset(
         for i in range(_scaled(n_pairs, cfg.scale)):
             person_token = tokens[i % len(tokens)]
             nonperson_token = eponyms[i % len(eponyms)] if category == "possessive" else None
+            register = "dialogue" if i % 3 == 0 else "essay"
             person, nonperson = teacher.generate_pair(
                 category,
                 person_token=person_token,
                 nonperson_token=nonperson_token,
+                register=register,
                 id_prefix=f"pair-{category}-{i:04d}",
             )
+            if not _token_in_names(person, person_token) or nonperson.name_spans():
+                n_disposition += 2  # drop the whole pair; keep only clean matched contrast
+                continue
             for ex in (person, nonperson):
                 raw.append(ex)
                 verifier_targets.append(teacher.verify_tagging(ex.input))
@@ -135,7 +174,8 @@ def build_dataset(
     # 2) teacher-distilled single passages per category (context variety)
     for category, count in cfg.category_counts.items():
         for i in range(_scaled(count, cfg.scale)):
-            ex = teacher.generate(category, id_=f"gen-{category}-{i:04d}")
+            register = "dialogue" if i % 3 == 0 else "essay"
+            ex = teacher.generate(category, register=register, id_=f"gen-{category}-{i:04d}")
             raw.append(ex)
             verifier_targets.append(teacher.verify_tagging(ex.input))
 
@@ -145,13 +185,30 @@ def build_dataset(
     raw.extend(negs)
     verifier_targets.extend([None] * len(negs))
 
+    # 3.5) optional real slice (CRAPII), routed through the SAME gate + leakage guards below.
+    if cfg.crapii_path and Path(cfg.crapii_path).exists():
+        from src.datagen.real_data import load_crapii
+
+        real = load_crapii(
+            cfg.crapii_path,
+            limit=(cfg.crapii_limit or None),
+            max_chars=cfg.crapii_max_chars,
+            names_only=True,
+        )
+        raw.extend(real)
+        verifier_targets.extend([None] * len(real))
+
     # 4) quality gate (incl. Day-4 category-semantics)
     kept, drops = filter_examples(raw, verifier_targets)
 
-    # 5) eval-leakage (hard ceiling): token-level guard THEN passage-level de-leak + split
+    # 5) eval-leakage (hard ceiling): intended-token guard -> passage-surface guard (any eval
+    #    surface anywhere) -> exact-passage de-leak + split
     kept, n_token_leak = drop_eval_token_overlap(kept, cfg.eval_dir)
+    kept, n_surface_leak = drop_eval_surface_overlap(kept)
     train, val, n_leak = deleak_and_split(kept, cfg.eval_dir, cfg.val_frac, cfg.seed)
+    drops["pair_disposition"] = n_disposition
     drops["eval_token_leak"] = n_token_leak
+    drops["eval_surface_leak"] = n_surface_leak
     drops["eval_leak"] = n_leak
     return train, val, drops
 
@@ -172,21 +229,62 @@ def _load_yaml(path: str) -> DatagenConfig:
     return DatagenConfig(**d)
 
 
+def _load_dotenv(path: str = ".env") -> None:
+    """Load ``KEY=VALUE`` lines from ``.env`` into the environment (tolerant of spacing/quotes).
+
+    Keeps credential handling inside the process rather than relying on shell ``source .env``,
+    which breaks on entries like ``KAGGLE_KEY = ...`` (spaces around ``=``). Never overrides an
+    already-set variable.
+    """
+    p = Path(path)
+    if not p.exists():
+        return
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/datagen.yaml")
-    ap.add_argument("--provider", default="anthropic", choices=["anthropic", "openai"])
+    ap.add_argument(
+        "--provider",
+        default="anthropic",
+        choices=["anthropic", "openai", "authored"],
+        help="'authored' = in-session template teacher (no network); see src/datagen/author.py",
+    )
+    ap.add_argument("--seed", type=int, default=None, help="override cfg.seed (diverse batches)")
+    ap.add_argument("--out-dir", default=None, help="override cfg.out_dir (separate batch dir)")
+    ap.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="teacher sampling temperature; raise (e.g. 0.8) so short batches add NEW passages",
+    )
     args = ap.parse_args()
 
     cfg = _load_yaml(args.config)
+    if args.seed is not None:
+        cfg.seed = args.seed
+    if args.out_dir:
+        cfg.out_dir = args.out_dir
+    _load_dotenv()  # load OPENAI_API_KEY (and any KAGGLE_* creds) without relying on shell `source`
 
-    from src.eval.judge import build_anthropic_complete, build_openai_complete
+    if args.provider == "authored":
+        from src.datagen.author import AuthoredTeacher
 
-    if args.provider == "anthropic":
-        complete = build_anthropic_complete()
+        teacher = AuthoredTeacher()
     else:
-        complete = build_openai_complete()
-    teacher = TeacherGenerator(gen=complete, verify=complete)
+        from src.eval.judge import build_anthropic_complete, build_openai_complete
+
+        if args.provider == "anthropic":
+            complete = build_anthropic_complete(temperature=args.temperature)
+        else:
+            complete = build_openai_complete(temperature=args.temperature)
+        teacher = TeacherGenerator(gen=complete, verify=complete)
 
     train, val, drops = build_dataset(cfg, teacher)
     counts = write_splits(train, val, cfg.out_dir)

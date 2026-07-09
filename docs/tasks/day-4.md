@@ -3,7 +3,7 @@
 **Goal.** One specific failure mode is resolved via **data iteration** (not hyperparameters), and the
 improvement is visible in the numbers.
 
-> **Ceiling reminder (AGENTS.md):** do not touch lr/r/epochs to paper over a data problem. Today the
+> **Ceiling reminder (CLAUDE.md):** do not touch lr/r/epochs to paper over a data problem. Today the
 > only lever you pull is the dataset.
 
 ## Specs (definition of done)
