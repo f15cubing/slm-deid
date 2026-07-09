@@ -77,6 +77,16 @@ _Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (
   pass>0.
 
 ## Done (recent)
+- **Held-out-NAMES generalization probe (branch `worktree-heldout-names-testset`, high-risk lane).**
+  New quarantined `eval/heldout_names/heldout_names.jsonl` (74 hand-built, 14 fresh ambiguous names —
+  Aurora/Bragg/Jackson/Kepler/Snell/Willow/… — verified absent from training + vocab bank + BLOCKLIST +
+  existing `eval/hardcases`, guarded by `tests/test_heldout_names_disjoint.py`; built offline by
+  `scripts/gen_heldout_names_testset.py`, fresh phrasings, not the author.py templates). Answers "does
+  name judgment transfer to names never seen?" — **yes: base→tuned (`outputs/sft-v3-mps`, MPS) recall
+  0.083→1.000, precision 0.375→0.947, leakage 0.446→0.000, integrity_viol 0.081→0.000, pass 0.541→0.973**.
+  Prompted base misses ~92% of unseen names; tuned catches all. Only residual: 2 person-vs-place over-tags
+  (place-as-subject: "Jackson expanded", "Aurora grew") — a data fix, not hyperparameters. Full note:
+  `docs/heldout-names-testset.md`.
 - **[v3-colab] canonical 4-bit QLoRA run on Colab T4 — DONE (numbers on the board).** Ran
   `notebooks/v3_colab_train_eval.ipynb` end-to-end on a Tesla T4: authored-teacher generation at
   `scale=2.0` → merge + co-occurrence → **924/102, eval_leak=0** (30 surface-overlap candidates dropped
