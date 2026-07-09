@@ -54,6 +54,41 @@ def _offset_map(model_text: str, original: str) -> dict[int, int]:
     return mapping
 
 
+# Gaps in the ORIGINAL that projection will bridge *inside* one tagged span: only whitespace and
+# zero-width/format characters — the documented real-text drift (collapsed double-spaces,
+# normalized newlines, stripped zero-width chars). A gap containing real content is NOT bridged,
+# so a drifted or hallucinated tag can never stretch across unrelated text — which would over-tag
+# and could even project a wrong judgment onto a real name span (inflating recall).
+_ZERO_WIDTH = frozenset("​‌‍⁠﻿­")
+
+
+def _bridgeable(gap: str) -> bool:
+    return all(c.isspace() or c in _ZERO_WIDTH for c in gap)
+
+
+def _project_one(sp: TaggedSpan, omap: dict[int, int], original: str) -> list[TaggedSpan]:
+    """Project one model span into original-coordinate runs.
+
+    Each maximal run of characters mapping to a contiguous original region — optionally across a
+    whitespace-only gap — becomes one span. A model span whose characters map to disjoint,
+    content-separated regions therefore yields several small spans rather than a single span that
+    swallows everything between them.
+    """
+    mapped = [omap[i] for i in range(sp.start, sp.end) if i in omap]
+    if not mapped:
+        return []
+    runs: list[TaggedSpan] = []
+    run_start = prev = mapped[0]
+    for oi in mapped[1:]:
+        if oi == prev + 1 or (oi > prev + 1 and _bridgeable(original[prev + 1 : oi])):
+            prev = oi
+        else:
+            runs.append(TaggedSpan(run_start, prev + 1, original[run_start : prev + 1]))
+            run_start = prev = oi
+    runs.append(TaggedSpan(run_start, prev + 1, original[run_start : prev + 1]))
+    return runs
+
+
 def _merge_overlaps(spans: list[TaggedSpan]) -> list[TaggedSpan]:
     """Sort by start and coalesce overlapping/duplicate spans (keeps tags well-formed)."""
     ordered = sorted(spans, key=lambda s: (s.start, s.end))
@@ -89,12 +124,11 @@ def project(original: str, model_tagged: str) -> ProjectionResult:
     projected: list[TaggedSpan] = []
     dropped = 0
     for sp in model_spans:
-        mapped = [omap[i] for i in range(sp.start, sp.end) if i in omap]
-        if not mapped:
+        runs = _project_one(sp, omap, original)
+        if not runs:
             dropped += 1  # nothing in this span aligned to the original → drift; drop it
             continue
-        start, end = min(mapped), max(mapped) + 1
-        projected.append(TaggedSpan(start, end, original[start:end]))
+        projected.extend(runs)
 
     merged = _merge_overlaps(projected)
     # _merge_overlaps leaves coalesced spans with empty text; refill from the original slice.

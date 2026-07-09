@@ -30,10 +30,18 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
             r"(?<!\d)(?:\+?1[ .\-]?)?\(?\d{3}\)?[ .\-]\d{3}[ .\-]\d{4}(?!\d)",
         ),
     ),
-    ("IP", re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")),
-    # Generic ID: a token with a long digit run (student/record IDs). Last, so specific
-    # patterns above claim their matches first.
-    ("ID", re.compile(r"\b[A-Za-z]*\d[A-Za-z0-9\-]*\d{4,}[A-Za-z0-9\-]*\b")),
+    # Dotted-quad with each octet bounded 0-255 (rejects e.g. "999.1.1.1"). Version strings like
+    # "1.2.3.4" are genuinely IP-shaped and can't be disambiguated without more context.
+    (
+        "IP",
+        re.compile(
+            r"\b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\b"
+        ),
+    ),
+    # Generic ID: an alphanumeric token that mixes letters AND digits (student/record IDs like
+    # "STU00081234"). Requiring a letter avoids tagging ordinary numbers (scores, populations,
+    # decimals) — those are not identifiers. Last, so the specific patterns above win overlaps.
+    ("ID", re.compile(r"\b(?=[A-Za-z0-9\-]*[A-Za-z])(?=[A-Za-z0-9\-]*\d)[A-Za-z0-9\-]{5,}\b")),
 ]
 
 

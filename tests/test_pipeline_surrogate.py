@@ -19,12 +19,13 @@ def test_distinct_values_get_distinct_surrogates():
 
 def test_reproducible_across_instances():
     seq = [("NAME", "Sarah"), ("EMAIL", "s@x.edu"), ("NAME", "Marcus")]
-    out1 = [SurrogateMap(seed=7).get(lbl, v) for lbl, v in seq]
 
-    m = SurrogateMap(seed=7)
-    out2 = [m.get(lbl, v) for lbl, v in seq]
-    # A fresh, freshly-seeded map reproduces the first surrogate of each type.
-    assert out1[0] == out2[0]
+    def run():
+        m = SurrogateMap(seed=7)
+        return [m.get(lbl, v) for lbl, v in seq]
+
+    # Two identically-driven, instance-seeded maps reproduce the WHOLE sequence.
+    assert run() == run()
 
 
 def test_name_shape_preserved():

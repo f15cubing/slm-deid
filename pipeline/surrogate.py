@@ -26,7 +26,9 @@ class SurrogateMap:
         from faker import Faker
 
         self._fake = Faker()
-        Faker.seed(seed)
+        # Seed the instance (not the process-global generator) so reproducibility holds even if
+        # another Faker is drawing concurrently.
+        self._fake.seed_instance(seed)
         self._cache: dict[tuple[str, str], str] = {}
 
     def _fresh(self, label: str, original: str) -> str:
