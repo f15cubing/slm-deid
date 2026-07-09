@@ -116,10 +116,21 @@ class LLMJudge:
 
 
 # --- lazy real clients (no key wired in the repo) --------------------------------------
-def build_openai_complete(model: str = "gpt-4o", temperature: float = 0.0) -> Complete:
+def build_openai_complete(model: str | None = None, temperature: float = 0.0) -> Complete:
+    """OpenAI-compatible teacher/judge client.
+
+    Works against OpenAI directly OR any OpenAI-compatible gateway (e.g. the TrueFoundry LLM
+    Gateway): the ``OpenAI`` SDK reads ``OPENAI_API_KEY`` and ``OPENAI_BASE_URL`` from the
+    environment, so pointing at a gateway is pure env config. Only the model id must change —
+    gateways namespace it (``openai-main/gpt-4o``) — so default it from ``TEACHER_MODEL`` when the
+    caller doesn't pass one explicitly.
+    """
+    import os
+
     from openai import OpenAI  # lazy
 
-    client = OpenAI()
+    model = model or os.environ.get("TEACHER_MODEL", "gpt-4o")
+    client = OpenAI()  # honors OPENAI_API_KEY + OPENAI_BASE_URL
 
     def complete(system: str, user: str) -> str:
         resp = client.chat.completions.create(
