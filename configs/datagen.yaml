@@ -7,44 +7,51 @@
 # possessive 1). Tokens come from the curated, eval-DISJOINT bank in src/datagen/vocab.py, so this
 # stays a clean generalization test (see docs/error-analysis-v1.md).
 #
-# `scale` multiplies every count below — the ONE knob to size the run. The vocab bank was expanded
-# ~3x (src/datagen/vocab.py), so scale:3 gives ~3x the volume at the SAME per-token reuse as the
-# old scale:1 run — real diversity, not repeats. Expect ~1,530 raw examples at scale:3 (~510/unit).
-# COST: the gpt-4o teacher makes ~2 calls/raw example (generate + verify), so scale:3 ≈ ~3k calls
-# per run — budget accordingly, or drop scale back to 1.0 for a cheap smoke run first.
-# Run with:  python -m src.datagen.generate --config configs/datagen.yaml --provider openai
-scale: 3.0
+# `scale` multiplies every count below — the ONE knob to size the run. Minimal pairs are 50/50
+# person/non-person by construction; leaning on them (over the withhold-only negatives) is what
+# rebalances person_vs_common toward person-use and recovers recall/consistency (v2 was 18 tag / 38
+# withhold). The vocab bank is large (src/datagen/vocab.py), so raising `scale` buys DIVERSITY (low
+# per-token reuse), not repeats. CRAPII is folded in at MERGE time (not here) so it is added once.
+# The committed v3 splits (927/102) were built at scale 2.0 with the in-session AUTHORED teacher
+# (the gpt-4o key was billing-blocked). Rebuild — or run a canonical live-teacher pass — with:
+#   python -m src.datagen.generate --config configs/datagen.yaml --provider authored --seed 1 --out-dir data/_b1
+#   python -m src.datagen.merge --out data --sources data/_b1/splits/train.jsonl data/_b1/splits/val.jsonl --crapii data/raw/cleaned_repository_pii_train.json --crapii-limit 150
+# (`--provider openai/anthropic` also work when a teacher key is available; ~2 gpt-4o calls/example.)
+scale: 2.0
 
 # --- matched minimal pairs (each entry = number of PAIRS; each pair -> 2 examples) --------
-# Weighted toward the categories Day-3 over-tagged the most. `possessive` pairs contrast a
-# person's possessive ("Joy's essay" -> tagged) with an eponymous possessive ("Joule's law" ->
-# untagged), which also supplies the eponymous-possessive negatives.
+# Weighted toward the weakest categories. `person_vs_common` is bumped hardest (the recall/
+# consistency regression); `possessive` up to counter its v2 collapse (n=1). Pairs draw from the
+# expanded eval-disjoint bank (vocab.py: 43 common / 32 places / 35 eponyms) so the model learns
+# the person-vs-non-person contrast over MANY surfaces (see the bank in src/datagen/vocab.py)
+# rather than memorizing a handful.
 minimal_pairs:
-  person_vs_place: 60
-  person_vs_common: 60
-  possessive: 40
+  person_vs_common: 70
+  person_vs_place: 55
+  possessive: 45
   person_vs_eponym: 30
 
 # --- teacher single passages per category (register/context variety beyond the pairs) -----
-# negative_trap is bumped for more sentence-initial capitalized non-name negatives (a Day-3
-# over-tag source). No person_vs_* singles here — those are covered by the minimal pairs above,
-# where the token is controlled and the category-semantics gate can verify it.
+# negative_trap trimmed (it only adds withhold examples, which biased v2). No person_vs_* singles
+# here — those are covered by the balanced minimal pairs above (controlled token + semantics gate).
 category_counts:
-  negative_trap: 40
-  first_name_only: 20
+  negative_trap: 25
+  first_name_only: 24
   third_party: 20
-  easy: 12
+  easy: 14
 
-negatives: 40        # Faker pattern-type negatives (emails/phones/IDs untagged; pure = negative_trap)
+negatives: 25        # Faker pattern-type negatives (emails/phones/IDs untagged; pure = negative_trap)
 seed: 0
 val_frac: 0.1
 out_dir: data
 eval_dir: eval       # used ONLY for the leakage guards (token + passage); never read as training data
 
-# --- optional real slice (CRAPII) — OFF unless crapii_path is set ------------------------
-# Not committed. Provide the file (Kaggle/Zenodo download) at data/raw/crapii.jsonl, then set
-# crapii_path below. Routed through the same quality gate + leakage guards; kept SMALL because
-# NAME_STUDENT under-tags non-student names (see src/datagen/real_data.py caveat).
-crapii_path: data/raw/cleaned_repository_pii_train.json
-crapii_limit: 120
+# --- real slice (CRAPII) — folded in at MERGE time, not during generate -----------------
+# Left null here so each generate batch is pure synthetic (avoids folding CRAPII once per batch);
+# merge.py adds it exactly once via --crapii/--crapii-limit (v3 used --crapii-limit 150). Routed
+# through the SAME quality gate + leakage guards. NAME_STUDENT under-tags non-student names (see
+# src/datagen/real_data.py caveat). The two crapii_* keys below are UNUSED while crapii_path is null
+# (generate never reads CRAPII); kept only as documentation of the merge-time defaults.
+crapii_path: null
+crapii_limit: 150
 crapii_max_chars: 3000

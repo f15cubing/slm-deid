@@ -1,5 +1,9 @@
-# QLoRA training config (Day 3 real run; Day 2 smoke uses --smoke overrides).
-# Frozen on Day 4 (fix data, not hyperparameters) — prove it with a diff.
+# QLoRA training config — Colab/CUDA (4-bit QLoRA via unsloth). Mac/MPS counterpart is
+# configs/train.mps.bf16.yaml. LoRA hyperparameters are IDENTICAL across both backends so
+# base-vs-tuned stays comparable (frozen since Day 4: fix data, not hyperparameters).
+# NOTE: this path 4-bit-quantizes the base, so its base-vs-tuned numbers RE-BASELINE vs the Mac
+# bf16 runs (v2/v3) — report Colab numbers as their own line, don't reuse the MPS ones.
+# Used by notebooks/v3_colab_train_eval.ipynb to reproduce v3 on Colab. Override --output-dir per run.
 base_model: unsloth/Qwen3-1.7B-unsloth-bnb-4bit
 max_seq_len: 2048
 
@@ -25,4 +29,4 @@ val_path: data/splits/val.jsonl
 completion_only: true      # mask the prompt; loss only on the tagged completion
 enable_thinking: false
 
-output_dir: outputs/sft-v1
+output_dir: outputs/sft-v3-colab   # override per run with --output-dir

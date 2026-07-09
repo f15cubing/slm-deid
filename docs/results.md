@@ -3,14 +3,93 @@
 _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstrap CIs (spec S3.5) are
 **generated from the saved reports** (`python -m src.eval.report`), not hand-transcribed._
 
-- **[v2 (Day 4)](#v2-day-4--current) — current.** CRAPII-augmented data (242/26), bf16. Over-tagging
-  and the integrity regression fixed; pass-rate up. Model card: [`docs/model-card-v2.md`](model-card-v2.md).
+- **[v3 (data rebalance)](#v3-data-rebalance--current) — current.** Rebalanced + scaled data (927/102),
+  bf16. Fixes v2's recall/consistency regression: recall 0.44→0.93, consistency 0.13→0.75, leakage
+  →0.04, with over-tag/integrity held. Model card: [`docs/model-card-v3.md`](model-card-v3.md).
+- **[v2 (Day 4)](#v2-day-4--prior) — prior.** CRAPII-augmented data (242/26). Fixed over-tagging +
+  integrity, but recall/consistency regressed. Model card: [`docs/model-card-v2.md`](model-card-v2.md).
 - **[v1 (Day 3)](#v1-day-3--prior) — prior.** First numbers; high recall but 0.37 over-tag + integrity
-  regression (the problems v2 set out to fix).
+  regression.
 
 ---
 
-# v2 (Day 4) — current
+# v3 (data rebalance) — current
+
+_`sft-v3-mps`: same LoRA recipe (r=32, α=32, lr=2e-4, seq 2048, 3 epochs, completion-only) over
+`Qwen/Qwen3-1.7B`, **bfloat16** on Apple MPS, trained on the **v3 dataset (927 train / 102 val)** and
+evaluated on the **quarantined 51 hard cases**. v3 targets v2's recall/consistency regression **in the
+data**: the `person_vs_common` withhold bias (v2: 18 person / 38 withhold) is rebalanced to ~50/50, the
+eval-disjoint vocab bank ~doubled (53→110: 43 common / 32 places / 35 eponyms) for generalization, and the set
+scaled ~3.8×. Hyperparameters unchanged from v1/v2. `eval_leak = 0` (all three guards + independent
+scan; positive control fires 50/51). Data authored in-session (teacher API unavailable) — see the model
+card caveat. Reports: `outputs/eval_reports/{base,tuned}-20260708-202*.json`._
+
+<!-- Regenerate (offline, no model / no network) with:
+python -m src.eval.report \
+  base=outputs/eval_reports/base-20260708-202439.json \
+  tuned=outputs/eval_reports/tuned-20260708-202511.json -->
+
+## Overall
+
+| model | n | precision | recall | F5 | leakage_rate | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|---|---|
+| base | 51 | 0.500 [0.18, 0.83] | 0.185 [0.04, 0.35] | 0.190 [0.04, 0.35] | 0.412 [0.27, 0.55] | 0.098 [0.02, 0.20] | 0.039 [0.00, 0.10] | 0.549 [0.41, 0.69] | 0.250 |
+| tuned | 51 | 0.781 [0.63, 0.93] | 0.926 [0.81, 1.00] | 0.919 [0.81, 1.00] | 0.039 [0.00, 0.10] | 0.137 [0.04, 0.24] | 0.000 [0.00, 0.00] | 0.863 [0.76, 0.96] | 0.750 |
+| Δ (tuned−base) |  | +0.281 | +0.741 | +0.730 | -0.373 | +0.039 | -0.039 | +0.314 | +0.500 |
+
+## Per-category (base → tuned within each category)
+
+| category | n | model | recall | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|
+| person_vs_common | 16 | base | 0.125 [0.00, 0.43] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.562 [0.31, 0.81] | 0.125 |
+| person_vs_common | 16 | tuned | 1.000 [1.00, 1.00] | 0.125 [0.00, 0.31] | 0.000 [0.00, 0.00] | 0.875 [0.69, 1.00] | 0.750 |
+| person_vs_place | 10 | base | 0.400 [0.00, 0.86] | 0.100 [0.00, 0.30] | 0.000 [0.00, 0.00] | 0.600 [0.30, 0.90] | 0.250 |
+| person_vs_place | 10 | tuned | 1.000 [1.00, 1.00] | 0.100 [0.00, 0.30] | 0.000 [0.00, 0.00] | 0.900 [0.70, 1.00] | 0.750 |
+| person_vs_eponym | 8 | base | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.750 [0.38, 1.00] | 0.333 |
+| person_vs_eponym | 8 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | 1.000 |
+| first_name_only | 3 | base | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | – |
+| first_name_only | 3 | tuned | 1.000 [1.00, 1.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| possessive | 3 | base | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 1.000 |
+| possessive | 3 | tuned | 1.000 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.667 [0.00, 1.00] | 0.000 |
+| third_party | 3 | base | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | – |
+| third_party | 3 | tuned | 0.667 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.667 [0.00, 1.00] | – |
+| negative_trap | 5 | base | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] | 1.000 [1.00, 1.00] | – |
+| negative_trap | 5 | tuned | 0.000 [0.00, 0.00] | 0.200 [0.00, 0.60] | 0.000 [0.00, 0.00] | 0.800 [0.40, 1.00] | – |
+| easy | 3 | base | 0.000 [0.00, 0.00] | 0.333 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | – |
+| easy | 3 | tuned | 0.750 [0.00, 1.00] | 0.333 [0.00, 1.00] | 0.000 [0.00, 0.00] | 0.667 [0.00, 1.00] | – |
+
+## The read (honest: the regression is fixed, with residual over-tag)
+
+1. **The v2 recall/consistency regression is fixed — decisively, with separated CIs.** Recall
+   0.444 → **0.926** (CI `[0.81, 1.00]` vs base `[0.04, 0.35]`), F5 → 0.919, and **consistency
+   0.125 → 0.750** (6×). Leakage collapsed to **0.039**. This validates the diagnosis: v2 under-tagged
+   because its `person_vs_common` data was 2:1 withhold-skewed; rebalancing to 50/50 + tripling the
+   surface bank fixed it. `person_vs_common` recall went **0.125 → 1.000**, `person_vs_place` and
+   `person_vs_eponym` likewise to 1.000.
+2. **No trade-off this time — over-tag and integrity held.** over_tag 0.137 (unchanged vs v2, CI
+   overlaps base) and **integrity 0.000** (perfect). So recall/consistency recovered *without* giving
+   back the v2 gains — pass-rate rose to **0.863**.
+3. **Residual failures are the eponymous-possessive + a stray pronoun tag.** The misses: "Newton's
+   laws" (eponymous possessive over-tagged — `possessive` remains the weak spot, and its training
+   contrast is still hard to author cleanly), "visited Chelsea" (place over-tagged), and one case where
+   the model tagged the pronoun "She". `negative_trap` over_tag ticked to 0.200 (the pronoun case). These
+   are the next targets, not regressions.
+
+## Caveats (v3)
+
+- **Small n, single seed.** n=51; per-category n=3 cells (possessive/third_party/easy) have CIs spanning
+  most of [0,1]. The overall recall/F5/leakage/consistency gaps are the robust ones.
+- **In-session authored data.** The teacher API was unavailable, so v3 passages were authored from
+  templates (`src/datagen/author.py`) and routed through the same gate + leakage guards. There is no
+  INDEPENDENT verifier pass (label trust rests on the deterministic gates). Template-authored text is
+  less linguistically varied than a frontier teacher's — a real limitation to note when reading the size
+  of the win. See the model card.
+- **bf16 lineage** (same as v2); base reproduces the Day-3 fp16 base, so base-vs-tuned is fair.
+- Reports: `outputs/eval_reports/{base,tuned}-20260708-202*.json`. Model: `outputs/sft-v3-mps/`.
+
+---
+
+# v2 (Day 4) — prior
 
 _`sft-v2-mps`: LoRA (r=32, α=32, lr=2e-4, seq 2048, 3 epochs, completion-only) over `Qwen/Qwen3-1.7B`,
 trained on the **v2 dataset (242 train / 26 val, CRAPII-augmented)** in **bfloat16** on Apple MPS, and

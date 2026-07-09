@@ -250,7 +250,12 @@ def _load_dotenv(path: str = ".env") -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/datagen.yaml")
-    ap.add_argument("--provider", default="anthropic", choices=["anthropic", "openai"])
+    ap.add_argument(
+        "--provider",
+        default="anthropic",
+        choices=["anthropic", "openai", "authored"],
+        help="'authored' = in-session template teacher (no network); see src/datagen/author.py",
+    )
     ap.add_argument("--seed", type=int, default=None, help="override cfg.seed (diverse batches)")
     ap.add_argument("--out-dir", default=None, help="override cfg.out_dir (separate batch dir)")
     ap.add_argument(
@@ -268,13 +273,18 @@ def main() -> None:
         cfg.out_dir = args.out_dir
     _load_dotenv()  # load OPENAI_API_KEY (and any KAGGLE_* creds) without relying on shell `source`
 
-    from src.eval.judge import build_anthropic_complete, build_openai_complete
+    if args.provider == "authored":
+        from src.datagen.author import AuthoredTeacher
 
-    if args.provider == "anthropic":
-        complete = build_anthropic_complete(temperature=args.temperature)
+        teacher = AuthoredTeacher()
     else:
-        complete = build_openai_complete(temperature=args.temperature)
-    teacher = TeacherGenerator(gen=complete, verify=complete)
+        from src.eval.judge import build_anthropic_complete, build_openai_complete
+
+        if args.provider == "anthropic":
+            complete = build_anthropic_complete(temperature=args.temperature)
+        else:
+            complete = build_openai_complete(temperature=args.temperature)
+        teacher = TeacherGenerator(gen=complete, verify=complete)
 
     train, val, drops = build_dataset(cfg, teacher)
     counts = write_splits(train, val, cfg.out_dir)
