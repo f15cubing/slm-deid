@@ -48,3 +48,6 @@ secrets/
 .DS_Store
 .idea/
 *.swp
+
+# Human approve/deny decisions from scripts/review_ui.py (data, not code)
+reviews/
