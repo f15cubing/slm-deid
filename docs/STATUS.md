@@ -96,6 +96,20 @@ _Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **[Backlog→built] `pipeline/` end-to-end de-id pipeline (branch `worktree-deid-pipeline`, draft PR, fast lane)** —
+  productionization layer that consumes a trained `src.infer.Tagger`: deterministic pattern PII
+  (regex email/phone/SSN/credit-card/IP/URL/ID; Presidio optional) + **tag-by-offset projection**
+  (the backlog architecture fix — `difflib`-aligns the model's drifted output onto the ORIGINAL
+  bytes so `unwrap(project(...)) == original` **by construction**, killing the integrity failure
+  mode with no retraining) + consistent Faker surrogates. Three render modes (`tag`/`mask`/
+  `surrogate`) + CLI (`python -m pipeline.cli`). Kept separate from `src/` so Colab stays purely
+  train/eval; the layer never feeds text back into training (no leakage path). 33 new tests; full
+  `make check` green (166 passed, 4 skipped). Verified end-to-end via the CLI on all three modes.
+  Independent review (high-risk) found + fixed a MAJOR projection bug: span projection is now
+  per-contiguous-run (bridging only whitespace/zero-width gaps) so a drifted/garbage tag can't
+  stretch across unrelated text or coincidentally project onto a real name span (recall-inflation);
+  also tightened the ID regex (require a letter — no longer tags bare numbers) and IP octets, and
+  made surrogate seeding instance-local.
 - **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
   (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
   base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020
