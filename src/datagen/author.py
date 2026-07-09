@@ -179,8 +179,26 @@ COMMON_DIALOGUE = (
 # --- single-category pools --------------------------------------------------------------------
 # Clear personal names, disjoint from the eval blocklist, for first_name_only / third_party / easy.
 PERSON_NAMES = (
-    "Marcus", "Elena", "Diego", "Aisha", "Lena", "Kwame", "Sofia", "Rahul", "Nadia", "Oscar",
-    "Mei", "Ibrahim", "Carla", "Dmitri", "Yuki", "Fatima", "Leo", "Hana", "Andre", "Camila",
+    "Marcus",
+    "Elena",
+    "Diego",
+    "Aisha",
+    "Lena",
+    "Kwame",
+    "Sofia",
+    "Rahul",
+    "Nadia",
+    "Oscar",
+    "Mei",
+    "Ibrahim",
+    "Carla",
+    "Dmitri",
+    "Yuki",
+    "Fatima",
+    "Leo",
+    "Hana",
+    "Andre",
+    "Camila",
 )
 FIRST_NAME_ONLY = (
     "I sat next to {name} during the whole review session.",
@@ -236,14 +254,22 @@ class AuthoredTeacher:
         return pool[self._next(key) % len(pool)]
 
     # --- interface parity with TeacherGenerator -----------------------------------------
-    def _example(self, tagged: str, *, category: str, register: str, id_: str,
-                 token: str | None) -> Example:
+    def _example(
+        self, tagged: str, *, category: str, register: str, id_: str, token: str | None
+    ) -> Example:
         target = _clean(tagged)
         raw = tags.unwrap(target)
         spans = [Span(s.start, s.end, s.text, True) for s in tags.tagged_spans(target)]
         return Example(
-            id=id_, input=raw, target=target, register=register, category=category,
-            spans=spans, source="synthetic_teacher", quarantine=False, ambiguous_token=token,
+            id=id_,
+            input=raw,
+            target=target,
+            register=register,
+            category=category,
+            spans=spans,
+            source="synthetic_teacher",
+            quarantine=False,
+            ambiguous_token=token,
         )
 
     def _person_passage(self, name_token: str, register: str, *, possessive: bool = False) -> str:
@@ -251,8 +277,11 @@ class AuthoredTeacher:
         if possessive:
             tpl = self._pick(POSSESSIVE_PERSON, "poss_person")
         else:
-            tpl = (self._pick(PERSON_DIALOGUE, "person_dlg") if register == "dialogue"
-                   else self._pick(PERSON_ESSAY, "person_ess"))
+            tpl = (
+                self._pick(PERSON_DIALOGUE, "person_dlg")
+                if register == "dialogue"
+                else self._pick(PERSON_ESSAY, "person_ess")
+            )
         return tpl.format(name=tagged_name)
 
     def _nonperson_passage(self, token: str, category: str, register: str) -> str:
@@ -271,30 +300,43 @@ class AuthoredTeacher:
         pool = COMMON_DIALOGUE if register == "dialogue" else COMMON_ESSAY
         return self._pick(pool, f"common_{register}").format(sense=sense)
 
-    def generate_pair(self, category: str, *, person_token: str,
-                      nonperson_token: str | None = None, register: str = "essay",
-                      id_prefix: str = "pair") -> tuple[Example, Example]:
+    def generate_pair(
+        self,
+        category: str,
+        *,
+        person_token: str,
+        nonperson_token: str | None = None,
+        register: str = "essay",
+        id_prefix: str = "pair",
+    ) -> tuple[Example, Example]:
         nonperson_token = nonperson_token or person_token
         is_poss = category == "possessive"
         person = self._example(
             self._person_passage(person_token, register, possessive=is_poss),
-            category=category, register=register,
-            id_=f"{id_prefix}-{person_token}-person", token=person_token,
+            category=category,
+            register=register,
+            id_=f"{id_prefix}-{person_token}-person",
+            token=person_token,
         )
         nonperson = self._example(
             self._nonperson_passage(nonperson_token, category, register),
-            category=category, register=register,
-            id_=f"{id_prefix}-{nonperson_token}-nonperson", token=nonperson_token,
+            category=category,
+            register=register,
+            id_=f"{id_prefix}-{nonperson_token}-nonperson",
+            token=nonperson_token,
         )
         return person, nonperson
 
-    def generate(self, category: str, register: str = "essay", id_: str = "gen",
-                 token: str | None = None) -> Example:
+    def generate(
+        self, category: str, register: str = "essay", id_: str = "gen", token: str | None = None
+    ) -> Example:
         if category == "negative_trap":
             tagged = self._pick(NEGATIVE_TRAP, "neg")
         else:
             name = self._pick(PERSON_NAMES, f"name_{category}")
-            pool = {"first_name_only": FIRST_NAME_ONLY, "third_party": THIRD_PARTY}.get(category, EASY)
+            pool = {"first_name_only": FIRST_NAME_ONLY, "third_party": THIRD_PARTY}.get(
+                category, EASY
+            )
             tagged = self._pick(pool, category).format(name=tags.wrap(name))
         return self._example(tagged, category=category, register=register, id_=id_, token=token)
 
