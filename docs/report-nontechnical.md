@@ -44,7 +44,10 @@ entire point of our model**, and it's where 100% of the effort goes.
   on pairs like this forces it to learn *context* rather than memorize which words are "name-ish."
 - **A held-out test set.** 51 deliberately hard scenarios the model **never sees during training**, so
   the scores measure whether it learned the skill rather than memorized answers. We verified there is
-  **zero overlap** between training and test material (a "leakage" check), so the test is honest.
+  **zero overlap** between training and test material (a "leakage" check), so the test is honest. A
+  **human also reviewed all 51 cases one by one and signed off on them** (approving 50, flagging 1 for a
+  second look) — so the scores rest on human-checked examples, not just machine-generated labels. The
+  validation set (102 cases) was likewise fully human-approved.
 
 ## How we measure success
 
@@ -108,7 +111,9 @@ We've been careful not to oversell this:
 2. **The training data was written in-house.** We normally generate examples by distilling a top-tier
    "teacher" AI, but that service was unavailable during this build, so we authored the examples from
    templates. They're clean and correctly labeled, but **less linguistically varied** than real messy
-   text. Rebuilding with a frontier teacher is the clear next step to confirm the results hold.
+   text. Rebuilding with a frontier teacher is the clear next step to confirm the results hold. (Note:
+   the *test* and *validation* sets have been fully human-reviewed; the larger training set is only
+   partially reviewed so far.)
 3. **A known weak spot remains:** possessive eponyms like *"Newton's laws"* still get over-tagged
    occasionally, and one pronoun ("She") was tagged by mistake. These are the next targets.
 4. **Real-world text test.** On 68 genuine student essays, the model's *name judgment* generalized well

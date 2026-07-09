@@ -6,6 +6,11 @@
 _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto the consolidated `main`. v3 now has REAL numbers on MPS bf16: recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86 (over_tag/integrity held) — see `docs/results.md`→v3, `docs/model-card-v3.md`. The teacher-key blocker is bypassed by the in-session AUTHORED teacher (`--provider authored`), so Colab can generate with NO key. Pending: the canonical live-teacher 4-bit QLoRA run on Colab (re-baselines vs MPS bf16). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
+- **Human review of the eval/val data (seal of approval).** Reviewed item-by-item in
+  `scripts/review_ui.py` and sealed to `reviews/*.approved.jsonl`: val 102/102 approved, hard-cases test
+  set 50/51 approved (1 denied), co-occurrence set 29/29 approved. The 927-row train split is under
+  partial review (in progress). So the held-out test set + validation split are fully human-approved, not
+  just machine-gated — recorded in `docs/dataset-card-v3.md` → Human review.
 - **v3 training set up for Colab (4-bit QLoRA).** Consolidated `agent/datagen-v2-run` +
   `worktree-testset-review-ui` + `agent/infra-code-quality-loop` onto `main` (124 passed, 2 skipped).
   Added `notebooks/v3_colab_train_eval.ipynb`: clones `main` → generates the v3 dataset from the frozen
