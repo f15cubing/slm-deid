@@ -62,9 +62,26 @@ All three eval-leakage guards return **0** on the final splits; positive control
 inputs; an independent raw scan of all 1,029 rows for the 40 eval surfaces (incl. `may`/`hope`/`grace`)
 finds **none**. `tests/test_no_eval_leakage.py` + `tests/test_vocab.py` green.
 
+## Human review (seal of approval)
+Labels are placed by construction and gated deterministically, but several sets have now also been
+**reviewed item-by-item by a human** in `scripts/review_ui.py` (Approve/Deny per row; sealed to
+`reviews/<split>.approved.jsonl`). Status as of 2026-07-09:
+
+| set | rows | reviewed | approved | denied | status |
+|---|---|---|---|---|---|
+| val (`data/splits/val.jsonl`) | 102 | 102 | 102 | 0 | ✅ fully reviewed + sealed |
+| hard-cases test set (`eval/hardcases/hardcases.jsonl`) | 51 | 51 | 50 | 1 | ✅ fully reviewed + sealed (1 flagged for follow-up) |
+| co-occurrence contrast (`data/cooccur/cooccur.jsonl`) | 29 | 29 | 29 | 0 | ✅ fully reviewed + sealed |
+| train (`data/splits/train.jsonl`) | 927 | partial | — | — | 🔶 human review in progress (large set; not expected to complete) |
+
+So the **held-out test set and the validation split are fully human-approved**, not just
+machine-gated. Sealed approved-only exports live under `reviews/` (git-ignored; regenerate any time
+from the reviewer). Review decisions are advisory metadata — they do not alter the source splits.
+
 ## Known limitations
-1. **Template-authored** (not frontier-distilled, not human-labeled) — less linguistic variety; a
-   frontier-teacher regen is the follow-up.
+1. **Template-authored** (not frontier-distilled) — less linguistic variety; a frontier-teacher regen
+   is the follow-up. _Labeling_ is no longer fully unreviewed: val + the hard-cases test set are 100%
+   human-approved (see **Human review** above); the 927-row train split is only partially reviewed.
 2. **`possessive` contrast remains hard** — eponymous-possessive negatives ("Joule's law") are subtle;
    the eval still shows possessive over-tagging ("Newton's laws").
 3. **CRAPII real slice (109)** carries the NAME_STUDENT under-tagging caveat (`src/datagen/real_data.py`).

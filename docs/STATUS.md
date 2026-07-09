@@ -6,6 +6,11 @@
 _Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (`sft-v3`, authored teacher, 924/102, eval_leak=0). Decisive base-vs-tuned win with every hard ceiling held: recall 0.56→0.96, over_tag 0.53→0.04, integrity 0.55→0.00, consistency 0.25→0.94, pass 0.39→0.96 — see `docs/results.md`→v3-colab (now the canonical line; MPS bf16 v3 kept for lineage). Adapter/reports/splits persisted to `MyDrive/slm-deid-v3/`. The teacher-key blocker is resolved: the in-session AUTHORED teacher (`--provider authored`, NO key), and now the **TrueFoundry LLM Gateway** (`--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`). Now unblocked: the canonical LIVE-teacher 4-bit pass (authored templates are less varied). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
+- **Human review of the eval/val data (seal of approval).** Reviewed item-by-item in
+  `scripts/review_ui.py` and sealed to `reviews/*.approved.jsonl`: val 102/102 approved, hard-cases test
+  set 50/51 approved (1 denied), co-occurrence set 29/29 approved. The 927-row train split is under
+  partial review (in progress). So the held-out test set + validation split are fully human-approved, not
+  just machine-gated — recorded in `docs/dataset-card-v3.md` → Human review.
 - **TrueFoundry (OpenAI-compatible) teacher gateway supported.** `build_openai_complete` now defaults
   its model from `TEACHER_MODEL` (else `gpt-4o`); the OpenAI SDK already reads `OPENAI_API_KEY` +
   `OPENAI_BASE_URL`, so pointing the teacher at the TrueFoundry LLM Gateway is pure env config
