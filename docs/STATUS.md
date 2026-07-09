@@ -3,9 +3,19 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto the consolidated `main`. v3 now has REAL numbers on MPS bf16: recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86 (over_tag/integrity held) — see `docs/results.md`→v3, `docs/model-card-v3.md`. The teacher-key blocker is bypassed by the in-session AUTHORED teacher (`--provider authored`), so Colab can generate with NO key. Pending: the canonical live-teacher 4-bit QLoRA run on Colab (re-baselines vs MPS bf16). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
+_Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (`sft-v3`, authored teacher, 924/102, eval_leak=0). Decisive base-vs-tuned win with every hard ceiling held: recall 0.56→0.96, over_tag 0.53→0.04, integrity 0.55→0.00, consistency 0.25→0.94, pass 0.39→0.96 — see `docs/results.md`→v3-colab (now the canonical line; MPS bf16 v3 kept for lineage). Adapter/reports/splits persisted to `MyDrive/slm-deid-v3/`. The teacher-key blocker is resolved: the in-session AUTHORED teacher (`--provider authored`, NO key), and now the **TrueFoundry LLM Gateway** (`--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`). Now unblocked: the canonical LIVE-teacher 4-bit pass (authored templates are less varied). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
+- **Human review of the eval/val data (seal of approval).** Reviewed item-by-item in
+  `scripts/review_ui.py` and sealed to `reviews/*.approved.jsonl`: val 102/102 approved, hard-cases test
+  set 50/51 approved (1 denied), co-occurrence set 29/29 approved. The 927-row train split is under
+  partial review (in progress). So the held-out test set + validation split are fully human-approved, not
+  just machine-gated — recorded in `docs/dataset-card-v3.md` → Human review.
+- **TrueFoundry (OpenAI-compatible) teacher gateway supported.** `build_openai_complete` now defaults
+  its model from `TEACHER_MODEL` (else `gpt-4o`); the OpenAI SDK already reads `OPENAI_API_KEY` +
+  `OPENAI_BASE_URL`, so pointing the teacher at the TrueFoundry LLM Gateway is pure env config
+  (`--provider openai`). The v3 notebook's credentials cell documents the path. Unblocks the pending
+  live-teacher run without an OpenAI/Anthropic key. Fast lane; teacher client only.
 - **v3 training set up for Colab (4-bit QLoRA).** Consolidated `agent/datagen-v2-run` +
   `worktree-testset-review-ui` + `agent/infra-code-quality-loop` onto `main` (124 passed, 2 skipped).
   Added `notebooks/v3_colab_train_eval.ipynb`: clones `main` → generates the v3 dataset from the frozen
@@ -77,6 +87,18 @@ _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto t
   Prompted base misses ~92% of unseen names; tuned catches all. Only residual: 2 person-vs-place over-tags
   (place-as-subject: "Jackson expanded", "Aurora grew") — a data fix, not hyperparameters. Full note:
   `docs/heldout-names-testset.md`.
+- **[v3-colab] canonical 4-bit QLoRA run on Colab T4 — DONE (numbers on the board).** Ran
+  `notebooks/v3_colab_train_eval.ipynb` end-to-end on a Tesla T4: authored-teacher generation at
+  `scale=2.0` → merge + co-occurrence → **924/102, eval_leak=0** (30 surface-overlap candidates dropped
+  by the guard pre-training) → 4-bit QLoRA (`unsloth/Qwen3-1.7B-unsloth-bnb-4bit`, frozen
+  `configs/train.yaml`, 174 steps/3 epochs, finite loss, no NaN) → `outputs/sft-v3`. **base→tuned:
+  precision 0.36→0.93, recall 0.56→0.96, F5 0.54→0.96, leakage 0.24→0.02, over_tag 0.53→0.04, integrity
+  0.55→0.00, pass 0.39→0.96, consistency 0.25→0.94** — every hard ceiling held; per-category
+  person_vs_{eponym,common} F5→1.00 with over_tag→0. This is the **canonical 4-bit line** (re-baselines
+  vs MPS bf16, not a carry-over). Adapter/reports/splits → `MyDrive/slm-deid-v3/`. Numbers:
+  `docs/results.md` → v3-colab. Caveat: authored (not live-teacher) data — a live-teacher 4-bit pass is
+  the follow-up. `outputs/` is gitignored so only point values are committed (CIs regenerate from the
+  Drive reports).
 - **[v3] data-rebalance retrain + re-eval — MERGED to `main`** (independent-agent review passed; reconciled
   with main's parallel v3 consolidation). Fixes v2's recall/consistency regression **in the data**:
   rebalanced `person_vs_common` to ~50/50 (v2 was 18/38), consolidated eval-disjoint vocab bank (~167
@@ -89,6 +111,44 @@ _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto t
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **OOD generalization probe (branch `worktree-ood-probe`, DRAFT PR — high-risk lane)** — new quarantined
+  `eval/ood_probe` (36 cases) built by `scripts/build_ood_probe.py`, with surfaces disjoint from **both**
+  the eval set and the training banks (guard in-script + `test_vocab`/`test_no_eval_leakage`). Base-vs-tuned
+  on `sft-v3-mps` (MPS bf16): **recall 0.05→0.89, pass 0.53→0.89, consistency 0.00→0.90, over-tag flat 0.11**
+  — mirrors in-distribution → judgment generalized, not memorized. Perfect eponym/place/first-name on novel
+  tokens. Two real residual over-tags (season-word, eponymous-possessive) + a new honorific-boundary quirk.
+  See `docs/results.md` → OOD probe. Eval-only, never fed to training; leakage guard green.
+- **[Day 6] Adversarial / break-it eval set (branch `worktree-agent-a90e544c94f5773f3`, DRAFT PR, NOT
+  merged)** — 40 hand-built scenarios at `eval/adversarial/adversarial.jsonl` (built by
+  `scripts/build_adversarial.py`, mirroring `build_hardcases.py`): 34 `adversarial` + 6 `negative_trap`,
+  covering injection ("don't tag Bob" / over-tag traps), names-in-code/math (identifier vs person-in-
+  comment), unicode/typo/run-together names, messy lowercase chat, negative traps under attack, and
+  same-token person-vs-non-person adjacency. Quarantined (`quarantine=true`, `source=handbuilt`),
+  physically separate from `eval/hardcases/`, shares no input with it, and is **never fed to the
+  teacher/augmentation/training** — leakage guard + vocab-disjointness guard green. High-risk lane:
+  needs independent review before merge. 131 tests green.
+- **[Backlog→built] `pipeline/` end-to-end de-id pipeline (branch `worktree-deid-pipeline`, draft PR, fast lane)** —
+  productionization layer that consumes a trained `src.infer.Tagger`: deterministic pattern PII
+  (regex email/phone/SSN/credit-card/IP/URL/ID; Presidio optional) + **tag-by-offset projection**
+  (the backlog architecture fix — `difflib`-aligns the model's drifted output onto the ORIGINAL
+  bytes so `unwrap(project(...)) == original` **by construction**, killing the integrity failure
+  mode with no retraining) + consistent Faker surrogates. Three render modes (`tag`/`mask`/
+  `surrogate`) + CLI (`python -m pipeline.cli`). Kept separate from `src/` so Colab stays purely
+  train/eval; the layer never feeds text back into training (no leakage path). 33 new tests; full
+  `make check` green (166 passed, 4 skipped). Verified end-to-end via the CLI on all three modes.
+  Independent review (high-risk) found + fixed a MAJOR projection bug: span projection is now
+  per-contiguous-run (bridging only whitespace/zero-width gaps) so a drifted/garbage tag can't
+  stretch across unrelated text or coincidentally project onto a real name span (recall-inflation);
+  also tightened the ID regex (require a letter — no longer tags bare numbers) and IP octets, and
+  made surrogate seeding instance-local.
+- **[Eval] projection-based integrity metric (branch `agent/eval-projection-integrity`, stacked on the
+  pipeline branch, draft PR, high-risk lane)** — quantifies the pipeline fix on the real eval path:
+  `pipeline.project.ProjectingTagger` wraps any tagger so its output is projected onto the input
+  before scoring, and `scripts/eval_heldout.py --project` adds a `tuned+proj` row. CPU test proves
+  the effect without a model: on drifted output strict scoring gives `integrity_violation_rate=1.0`,
+  `recall=0.0`; projection gives `0.0` / `1.0` (judgment recovered, repetition tail dropped). Colab
+  run on the CRAPII held-out slice will turn this into published numbers. `make check` green (166
+  passed, 4 skipped). Needs independent review (eval harness) before merge.
 - **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
   (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
   base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020
