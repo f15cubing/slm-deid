@@ -121,3 +121,21 @@ def render_tagged(original: str, spans: list[TaggedSpan]) -> str:
 def project_tags(original: str, model_tagged: str) -> str:
     """Convenience: return ``original`` re-tagged from the model's judgment (integrity-safe)."""
     return project(original, model_tagged).tagged
+
+
+class ProjectingTagger:
+    """Wrap any :class:`~src.infer.Tagger` so its output is projected onto the input.
+
+    Drop-in for the eval harness: ``evaluate(ProjectingTagger(inner), examples)`` scores the
+    inner model's *judgment* on integrity-safe output. Because :func:`project_tags` only ever
+    re-inserts tags into the original passage, the wrapped tagger can never violate integrity —
+    so the harness's ``integrity_violation_rate`` measures the projected pipeline, and
+    recall/precision reflect judgment rather than being zeroed out by whitespace drift.
+    """
+
+    def __init__(self, inner, name: str | None = None):
+        self.inner = inner
+        self.name = name or f"{getattr(inner, 'name', 'model')}+proj"
+
+    def tag(self, passage: str) -> str:
+        return project_tags(passage, self.inner.tag(passage))

@@ -28,13 +28,14 @@ from __future__ import annotations
 
 from pipeline.deid import Deidentifier, DeidResult
 from pipeline.patterns import PatternSpan, detect
-from pipeline.project import project_spans, project_tags
+from pipeline.project import ProjectingTagger, project_spans, project_tags
 from pipeline.surrogate import SurrogateMap
 
 __all__ = [
     "DeidResult",
     "Deidentifier",
     "PatternSpan",
+    "ProjectingTagger",
     "SurrogateMap",
     "detect",
     "project_spans",

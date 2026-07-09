@@ -88,6 +88,14 @@ _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto t
   `surrogate`) + CLI (`python -m pipeline.cli`). Kept separate from `src/` so Colab stays purely
   train/eval; the layer never feeds text back into training (no leakage path). 30 new tests; full
   `make check` green (161 passed, 4 skipped). Verified end-to-end via the CLI on all three modes.
+- **[Eval] projection-based integrity metric (branch `agent/eval-projection-integrity`, stacked on the
+  pipeline branch, draft PR, high-risk lane)** — quantifies the pipeline fix on the real eval path:
+  `pipeline.project.ProjectingTagger` wraps any tagger so its output is projected onto the input
+  before scoring, and `scripts/eval_heldout.py --project` adds a `tuned+proj` row. CPU test proves
+  the effect without a model: on drifted output strict scoring gives `integrity_violation_rate=1.0`,
+  `recall=0.0`; projection gives `0.0` / `1.0` (judgment recovered, repetition tail dropped). Colab
+  run on the CRAPII held-out slice will turn this into published numbers. `make check` green (165
+  passed, 4 skipped). Needs independent review (eval harness) before merge.
 - **[Day 4] v2 retrain + re-eval (branch `agent/datagen-v2-run`, NOT merged)** — trained `sft-v2-mps`
   (LoRA on the CRAPII-augmented 242/26 v2 data, **bf16**; `train_loss 0.0298`, no NaN) and re-ran
   base-vs-tuned on the 51 hard cases. **Day-4 goal met: over_tag 0.37→0.137, integrity 0.118→0.020

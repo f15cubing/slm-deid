@@ -7,6 +7,12 @@ max_new_tokens differs. Not a committed entry point; a probe for external validi
 
     PYTORCH_ENABLE_MPS_FALLBACK=1 python -u scripts/eval_heldout.py \
         --split data/_heldout/crapii_heldout.jsonl --tuned outputs/sft-v3-mps --max-new-tokens 768
+
+Pass ``--project`` to add a third row where the tuned model's output is passed through the
+pipeline's tag-by-offset projection (``pipeline.project.ProjectingTagger``) before scoring. On
+messy real text this is expected to collapse ``integrity_violation_rate`` toward 0 (integrity
+holds by construction) and recover the recall/precision that strict byte-identity scoring zeroes
+out on whitespace drift — quantifying the ``pipeline/`` fix on the same eval path.
 """
 
 from __future__ import annotations
@@ -23,6 +29,11 @@ def main() -> None:
     ap.add_argument("--tuned", required=True, help="path to the tuned LoRA adapter")
     ap.add_argument("--max-new-tokens", type=int, default=768)
     ap.add_argument("--report-dir", default="outputs/eval_reports_heldout")
+    ap.add_argument(
+        "--project",
+        action="store_true",
+        help="also score the tuned model with tag-by-offset projection (integrity-safe output)",
+    )
     args = ap.parse_args()
 
     examples = _load_examples(args.split)
@@ -36,6 +47,15 @@ def main() -> None:
         path = write_report(report, args.report_dir)
         print(f"[{report.label}] wrote {path}")
         reports.append(report)
+
+        if args.project and adapter is not None:
+            from pipeline.project import ProjectingTagger
+
+            proj = ProjectingTagger(tagger, name="tuned+proj")
+            report = evaluate(proj, examples, label="tuned+proj")
+            path = write_report(report, args.report_dir)
+            print(f"[{report.label}] wrote {path}")
+            reports.append(report)
 
     print("\n" + compare(reports))
 
