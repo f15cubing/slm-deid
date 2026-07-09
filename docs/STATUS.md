@@ -3,7 +3,7 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto the consolidated `main`. v3 now has REAL numbers on MPS bf16: recall 0.44→0.93, consistency 0.13→0.75, leakage→0.04, pass→0.86 (over_tag/integrity held) — see `docs/results.md`→v3, `docs/model-card-v3.md`. The teacher-key blocker is resolved two ways: the in-session AUTHORED teacher (`--provider authored`, NO key), and now the **TrueFoundry LLM Gateway** (`--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`). Pending: the canonical live-teacher 4-bit QLoRA run on Colab (re-baselines vs MPS bf16). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
+_Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (`sft-v3`, authored teacher, 924/102, eval_leak=0). Decisive base-vs-tuned win with every hard ceiling held: recall 0.56→0.96, over_tag 0.53→0.04, integrity 0.55→0.00, consistency 0.25→0.94, pass 0.39→0.96 — see `docs/results.md`→v3-colab (now the canonical line; MPS bf16 v3 kept for lineage). Adapter/reports/splits persisted to `MyDrive/slm-deid-v3/`. The teacher-key blocker is resolved: the in-session AUTHORED teacher (`--provider authored`, NO key), and now the **TrueFoundry LLM Gateway** (`--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`). Now unblocked: the canonical LIVE-teacher 4-bit pass (authored templates are less varied). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
 - **TrueFoundry (OpenAI-compatible) teacher gateway supported.** `build_openai_complete` now defaults
@@ -72,6 +72,18 @@ _Last updated: 2026-07-09 — merged v3 (authored-teacher data-rebalance) onto t
   pass>0.
 
 ## Done (recent)
+- **[v3-colab] canonical 4-bit QLoRA run on Colab T4 — DONE (numbers on the board).** Ran
+  `notebooks/v3_colab_train_eval.ipynb` end-to-end on a Tesla T4: authored-teacher generation at
+  `scale=2.0` → merge + co-occurrence → **924/102, eval_leak=0** (30 surface-overlap candidates dropped
+  by the guard pre-training) → 4-bit QLoRA (`unsloth/Qwen3-1.7B-unsloth-bnb-4bit`, frozen
+  `configs/train.yaml`, 174 steps/3 epochs, finite loss, no NaN) → `outputs/sft-v3`. **base→tuned:
+  precision 0.36→0.93, recall 0.56→0.96, F5 0.54→0.96, leakage 0.24→0.02, over_tag 0.53→0.04, integrity
+  0.55→0.00, pass 0.39→0.96, consistency 0.25→0.94** — every hard ceiling held; per-category
+  person_vs_{eponym,common} F5→1.00 with over_tag→0. This is the **canonical 4-bit line** (re-baselines
+  vs MPS bf16, not a carry-over). Adapter/reports/splits → `MyDrive/slm-deid-v3/`. Numbers:
+  `docs/results.md` → v3-colab. Caveat: authored (not live-teacher) data — a live-teacher 4-bit pass is
+  the follow-up. `outputs/` is gitignored so only point values are committed (CIs regenerate from the
+  Drive reports).
 - **[v3] data-rebalance retrain + re-eval — MERGED to `main`** (independent-agent review passed; reconciled
   with main's parallel v3 consolidation). Fixes v2's recall/consistency regression **in the data**:
   rebalanced `person_vs_common` to ~50/50 (v2 was 18/38), consolidated eval-disjoint vocab bank (~167

@@ -3,9 +3,13 @@
 _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstrap CIs (spec S3.5) are
 **generated from the saved reports** (`python -m src.eval.report`), not hand-transcribed._
 
-- **[v3 (data rebalance)](#v3-data-rebalance--current) — current.** Rebalanced + scaled data (927/102),
-  bf16. Fixes v2's recall/consistency regression: recall 0.44→0.93, consistency 0.13→0.75, leakage
-  →0.04, with over-tag/integrity held. Model card: [`docs/model-card-v3.md`](model-card-v3.md).
+- **[v3-colab (4-bit QLoRA)](#v3-colab-4-bit-qlora--current) — current.** The canonical **4-bit QLoRA**
+  run (unsloth, Colab T4) on the scaled v3 data (924/102). Decisive base-vs-tuned win with **every hard
+  ceiling held**: recall 0.56→0.96, over_tag 0.53→0.04, integrity 0.55→0.00, consistency 0.25→0.94,
+  pass 0.39→0.96. Its own baseline (4-bit ≠ the MPS bf16 lineage below).
+- **[v3-mps (data rebalance)](#v3-mps-data-rebalance--prior-mps-bf16) — prior (MPS bf16).** Rebalanced +
+  scaled data (927/102), bf16. Fixed v2's recall/consistency regression: recall 0.44→0.93, consistency
+  0.13→0.75, leakage →0.04, with over-tag/integrity held. Model card: [`docs/model-card-v3.md`](model-card-v3.md).
 - **[v2 (Day 4)](#v2-day-4--prior) — prior.** CRAPII-augmented data (242/26). Fixed over-tagging +
   integrity, but recall/consistency regressed. Model card: [`docs/model-card-v2.md`](model-card-v2.md).
 - **[v1 (Day 3)](#v1-day-3--prior) — prior.** First numbers; high recall but 0.37 over-tag + integrity
@@ -13,7 +17,83 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
 
 ---
 
-# v3 (data rebalance) — current
+# v3-colab (4-bit QLoRA) — current
+
+_`sft-v3` (Colab): the **canonical 4-bit QLoRA** run — unsloth + bitsandbytes 4-bit `Qwen3-1.7B`
+(`unsloth/Qwen3-1.7B-unsloth-bnb-4bit`) on a **Tesla T4**, frozen `configs/train.yaml` (r=32, α=32,
+lr=2e-4, seq 2048, **3 epochs**, completion-only), trained on the **v3 dataset (924 train / 102 val)**
+and evaluated on the **quarantined 51 hard cases**. Data was generated in-session with the AUTHORED
+teacher (`--provider authored`, no API key) at `scale=2.0`, merged with the co-occurrence contrast set,
+deduped (132 dropped) → 924/102. **`eval_leak = 0` across all three guards** (token / surface / passage;
+30 surface-overlap candidates were dropped by the guard **before** training). Training: 174 steps, ~2%
+params trained, finite loss throughout (0.60 → ~1e-4), no NaN. Reports + adapter + splits persisted to
+Drive (`MyDrive/slm-deid-v3/`). Trained + evaluated 2026-07-09._
+
+> **Why this is its own baseline, not a v3-mps delta.** This path 4-bit-quantizes the base, so both
+> `base` and `tuned` here differ from the MPS bf16 pair below — the numbers **re-baseline** and must be
+> read as their own line (per `configs/train.yaml` and the Day-4 no-hyperparameter rule; the data recipe
+> is identical to v3-mps, only the backend/precision differ).
+
+## Overall
+
+_Point values transcribed from the Colab `compare()` output. The CI-annotated table + full per-category
+breakdown regenerate offline from the Drive-persisted reports via `python -m src.eval.report base=… tuned=…`
+once they're pulled back locally (they were not committed — `outputs/` is gitignored)._
+
+| model | n | precision | recall | F5 | leakage_rate | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|---|---|
+| base | 51 | 0.357 | 0.556 | 0.544 | 0.235 | 0.529 | 0.549 | 0.392 | 0.250 |
+| tuned-v3 | 51 | 0.929 | 0.963 | 0.962 | 0.020 | 0.039 | 0.000 | 0.961 | 0.938 |
+| Δ (tuned−base) |  | +0.572 | +0.407 | +0.418 | -0.216 | -0.490 | -0.549 | +0.569 | +0.688 |
+
+## Per-category (F5 / over_tag_rate, base → tuned-v3)
+
+| category | n | F5 (base → tuned) | over_tag_rate (base → tuned) |
+|---|---|---|---|
+| person_vs_common | 16 | 0.73 → **1.00** | 0.50 → **0.00** |
+| person_vs_place | 10 | 0.78 → **0.99** | 0.40 → **0.10** |
+| person_vs_eponym | 8 | 0.63 → **1.00** | 0.75 → **0.00** |
+| first_name_only | 3 | 0.00 → **1.00** | 1.00 → **0.00** |
+| third_party | 3 | 0.00 → **1.00** | 1.00 → **0.00** |
+| possessive | 3 | 0.96 → **1.00** | 0.33 → **0.00** |
+| easy | 3 | 0.50 → **0.75** | 0.67 → **0.33** |
+| negative_trap | 5 | 0.00 → 0.00 | 0.00 → 0.00 |
+
+## The read (honest: a decisive win, ceilings held)
+
+1. **SPOV-7 validated on the real 4-bit path — no trade-off.** over_tag collapses **0.529 → 0.039**
+   *and* F5 jumps **0.544 → 0.962** *and* recall stays high (**0.963**). The v1 pattern (recall bought
+   with over-tagging) is gone: the model both catches names and withholds on identical non-persons.
+2. **Every hard ceiling holds.** Leakage **0.235 → 0.020**, integrity **0.549 → 0.000** (perfect
+   byte-identity on the clean hard-cases set), and `eval_leak = 0`. Pass-rate **0.392 → 0.961**.
+3. **The ambiguous categories are essentially solved.** `person_vs_eponym` F5 0.63 → 1.00 (over_tag
+   0.75 → 0), `person_vs_common` 0.73 → 1.00 (0.50 → 0), `person_vs_place` 0.78 → 0.99 (0.40 → 0.10).
+   `first_name_only` and `third_party` go 0.00 → 1.00 with over_tag 1.00 → 0.00.
+4. **Strongest line to date, and cleaner than v3-mps.** vs the MPS bf16 v3 (recall 0.93, over_tag 0.14,
+   pass 0.86, consistency 0.75), the 4-bit run is higher on every axis — most notably over_tag (0.14 →
+   0.04) and consistency (0.75 → 0.94). Read it as the canonical number; the bf16 line stays for lineage.
+
+## Residual (next targets, not regressions)
+
+- **`easy` over_tag 0.33** and **`person_vs_place` over_tag 0.10** — the only non-zero over-tag cells.
+- **`negative_trap` F5 0.00 → 0.00 is correct, not a miss.** Those passages contain no names, so F5 is
+  undefined/0 by construction; the real signal is **over_tag 0.00** (a clean withhold).
+
+## Caveats (v3-colab)
+
+- **Small n, single seed.** n=51; per-category cells are n=3–16. The overall
+  recall/F5/leakage/over_tag/integrity/consistency gaps are the robust ones; treat per-category deltas as
+  suggestive (CIs not computed here — regenerate from the Drive reports for the `[low, high]` bands).
+- **In-session authored data.** Passages were authored from templates (`src/datagen/author.py`), routed
+  through the same quality gate + leakage guards — **no independent frontier-teacher verifier pass**.
+  Template text is less linguistically varied than a live teacher's; a canonical live-teacher 4-bit run
+  (`--provider openai/anthropic`) remains the follow-up. See the model card caveat.
+- **Point values only committed.** The CI-annotated table + full per-category recall/pass/integrity table
+  regenerate from `MyDrive/slm-deid-v3/eval_reports/{base,tuned}-*.json` (not in git).
+
+---
+
+# v3-mps (data rebalance) — prior (MPS bf16)
 
 _`sft-v3-mps`: same LoRA recipe (r=32, α=32, lr=2e-4, seq 2048, 3 epochs, completion-only) over
 `Qwen/Qwen3-1.7B`, **bfloat16** on Apple MPS, trained on the **v3 dataset (927 train / 102 val)** and
