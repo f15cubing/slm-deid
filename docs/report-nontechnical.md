@@ -62,30 +62,43 @@ the rest of the text is byte-for-byte unchanged. The key metrics:
 - **Integrity** — did it leave the rest of the text exactly as-is?
 - **Pass rate** — fully-correct passages overall.
 
-We compare **Base** (just *prompting* the general model) against **Tuned** (our fine-tuned model), both
-run on identical hardware for a fair comparison.
+We compare **Base** (just *prompting* the general model) against **Tuned** (our fine-tuned model), always
+on identical hardware so the comparison is fair.
 
 ## Results (v3, on the 51 hard cases)
 
-| What it measures | Plain prompting (base) | Our model (tuned v3) |
-|---|---|---|
-| **Recall** (catches names it should) | 0.19 | **0.93** |
-| **Leakage** (names missed — privacy risk) | 0.41 | **0.04** |
-| **Consistency** (stable when reworded) | 0.25 | **0.75** |
-| **Over-tagging** (flags non-names) | 0.10 | 0.14 |
-| **Overall pass rate** | 0.55 | **0.86** |
-| **Integrity** (never alters other text) | rare errors | **0 errors** |
+We trained the finished v3 model on the **exact same dataset** in **two setups**, and tested both — so
+the win can't be an artifact of one machine:
 
-**In plain terms:** plain prompting *misses roughly 4 out of 5 tricky names* — a serious privacy
-failure. Our model catches almost all of them, stays consistent across rewordings, and never garbles
-the surrounding text. It correctly splits "Newton" the person from the "Newton method," and
-"Grace"/"May"/"Rose" the person from the everyday word.
+- **The 4-bit deployment version** — the model *compressed* to 4-bit so it's small and fast enough to
+  run on a modest cloud GPU (or a laptop). This is the version you'd actually ship.
+- **A full-precision version on an Apple Mac** — our reproducibility cross-check, run entirely offline
+  on Apple silicon.
+
+| What it measures | 4-bit deployment · base → **tuned** | Full-precision (Mac) · base → **tuned** |
+|---|---|---|
+| **Recall** (catches names it should) | 0.56 → **0.96** | 0.19 → **0.93** |
+| **Leakage** (names missed — privacy risk) | 0.24 → **0.02** | 0.41 → **0.04** |
+| **Consistency** (stable when reworded) | 0.25 → **0.94** | 0.25 → **0.75** |
+| **Over-tagging** (flags non-names) | 0.53 → **0.04** | 0.10 → 0.14 |
+| **Overall pass rate** | 0.39 → **0.96** | 0.55 → **0.86** |
+| **Integrity** (never alters other text) | many errors → **0** | rare errors → **0** |
+
+**In plain terms:** in *both* setups, plain prompting misses most of the tricky names — a serious
+privacy failure — while our fine-tuned model catches almost all of them, stays consistent across
+rewordings, and never garbles the surrounding text. It correctly splits "Newton" the person from the
+"Newton method," and "Grace"/"May"/"Rose" the person from the everyday word.
+
+**The 4-bit deployment version is actually the stronger one** — higher recall, consistency, and pass
+rate, and its over-tagging *drops* to 0.04. So the version we'd ship is also the best-performing; we
+treat its numbers as the headline and keep the Mac run for reproducibility. (The two "base" columns
+differ because the 4-bit and full-precision versions start from slightly different copies of the general
+model — so each column is read against its own base, not across the two.)
 
 The recall, leakage, and consistency gains are **statistically robust** — their confidence intervals
-don't overlap with the base model's, meaning the improvement is real and not measurement noise.
-
-The one cost: over-tagging ticked up slightly (0.10 → 0.14). We consider this the right trade — being
-occasionally over-cautious is far safer than leaking a real name.
+don't overlap with the base model's, meaning the improvement is real and not measurement noise. The only
+place the Mac run pays a small cost is over-tagging (0.10 → 0.14) — being occasionally over-cautious is
+far safer than leaking a real name — and even that is gone in the 4-bit deployment version (→ 0.04).
 
 ### Why v3 exists (the iteration story)
 
@@ -117,15 +130,23 @@ We've been careful not to oversell this:
 3. **A known weak spot remains:** possessive eponyms like *"Newton's laws"* still get over-tagged
    occasionally, and one pronoun ("She") was tagged by mistake. These are the next targets.
 4. **Real-world text test.** On 68 genuine student essays, the model's *name judgment* generalized well
-   (name recall ~0.88), but the current output format — having it retype the whole passage — sometimes
-   introduces tiny spacing differences. The planned fix is to have it mark name *positions* instead of
-   retyping, which removes that issue without retraining. Already scoped as future work.
+   (name recall ~0.88), but the raw output format — having it retype the whole passage — sometimes
+   introduces tiny spacing differences. The fix is to mark name *positions* instead of retyping, which
+   removes that issue without retraining — and this is **now built** into the end-to-end pipeline (see
+   "Where the project stands"), so the shipped tool no longer has this failure mode.
 
 ## Where the project stands
 
-- The **v3 model is trained and evaluated**, and it fixed the v2 regression.
-- The work sits on a development branch and is **awaiting an independent review before it's finalized** —
-  appropriate for a change this central to a privacy-safety tool.
+- The **v3 model is trained and evaluated on both setups** (the 4-bit deployment version and the
+  full-precision Mac cross-check), and it fixed the v2 regression. All of this work is now **reviewed and
+  merged** into the main line.
+- We've since added three independent **stress tests** to keep ourselves honest, all quarantined from
+  training: an **out-of-distribution probe** (tricky words the model never saw as names — it still
+  scored ~0.89), a **held-out-names probe** (brand-new people's names), and an **adversarial "break-it"
+  set** (40 scenarios designed to trip it up, including prompt-injection traps).
+- An **end-to-end de-identification pipeline** now wraps the model: it combines the rule-based handling
+  of emails/phones/IDs with the model's name judgment, and applies the tags by *position* so the rest of
+  the text is guaranteed untouched — the planned fix for the spacing issue noted above, now built.
 
 ## The bigger point
 

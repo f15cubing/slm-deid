@@ -21,6 +21,31 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
 
 ---
 
+# At a glance — two architectures, one v3 dataset (base → tuned)
+
+The **same v3 dataset and frozen `configs/train.yaml`** trained on two backends: 4-bit QLoRA (the real
+deployment path, unsloth on a Colab T4) and bf16 plain-LoRA (the Apple-MPS repro path). Each column is
+that path's **own** base→tuned delta — 4-bit quantization changes the *starting* model, so the two
+bases differ and each column must be read within itself, not across. All on the 51 quarantined hard cases.
+
+| metric (51 hard cases) | 4-bit QLoRA · Colab T4 — *canonical* | bf16 LoRA · Apple MPS — *lineage* |
+|---|---|---|
+| recall (catches real names) | 0.56 → **0.96** | 0.19 → **0.93** |
+| leakage (names missed — privacy risk) | 0.24 → **0.02** | 0.41 → **0.04** |
+| over-tag (flags non-names) | 0.53 → **0.04** | 0.10 → 0.14 |
+| integrity violations (alters other text) | 0.55 → **0.00** | 0.04 → **0.00** |
+| consistency (stable under rewording) | 0.25 → **0.94** | 0.25 → **0.75** |
+| pass rate (fully-correct passages) | 0.39 → **0.96** | 0.55 → **0.86** |
+
+**Read.** Both fine-tunes beat their base decisively on every privacy-critical axis, so the *difference
+from the base model* — not the backend — is the dominant effect. Between the two architectures, the
+**4-bit path is the stronger and cleaner line**: higher recall / consistency / pass, and over-tag falls
+to **0.04** (vs the bf16 path's slight rise to 0.14). It is therefore the canonical number; the bf16 MPS
+run is retained for lineage and for reproducibility on Apple hardware. Full per-run tables (with 95%
+bootstrap CIs) are in the sections below.
+
+---
+
 # OOD generalization probe (v3)
 
 _A held-out **out-of-distribution** probe (`eval/ood_probe`, 36 cases: 18 name / 18 no-name), built by
