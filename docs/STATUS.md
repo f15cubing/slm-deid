@@ -101,6 +101,15 @@ _Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **[Day 6] Adversarial / break-it eval set (branch `worktree-agent-a90e544c94f5773f3`, DRAFT PR, NOT
+  merged)** — 40 hand-built scenarios at `eval/adversarial/adversarial.jsonl` (built by
+  `scripts/build_adversarial.py`, mirroring `build_hardcases.py`): 34 `adversarial` + 6 `negative_trap`,
+  covering injection ("don't tag Bob" / over-tag traps), names-in-code/math (identifier vs person-in-
+  comment), unicode/typo/run-together names, messy lowercase chat, negative traps under attack, and
+  same-token person-vs-non-person adjacency. Quarantined (`quarantine=true`, `source=handbuilt`),
+  physically separate from `eval/hardcases/`, shares no input with it, and is **never fed to the
+  teacher/augmentation/training** — leakage guard + vocab-disjointness guard green. High-risk lane:
+  needs independent review before merge. 131 tests green.
 - **[Backlog→built] `pipeline/` end-to-end de-id pipeline (branch `worktree-deid-pipeline`, draft PR, fast lane)** —
   productionization layer that consumes a trained `src.infer.Tagger`: deterministic pattern PII
   (regex email/phone/SSN/credit-card/IP/URL/ID; Presidio optional) + **tag-by-offset projection**
