@@ -146,6 +146,11 @@ def build_dataset(
     #    with an eponymous possessive negative (distinct eponym token). Disposition is enforced:
     #    the person half must tag its own token; the non-person half must tag NOTHING (a clean
     #    withhold, and no stray famous-name that could leak an eval surface). Bad pairs are dropped.
+    # Progress output keeps long (live-teacher) runs observable and keeps Colab's cell connection
+    # alive — a silent multi-minute loop is what triggers "runtime disconnected".
+    pairs_total = sum(_scaled(n, cfg.scale) for n in cfg.minimal_pairs.values())
+    pairs_done = 0
+    print(f"[datagen] minimal pairs: ~{pairs_total} to generate (2 teacher calls each)", flush=True)
     for category, n_pairs in cfg.minimal_pairs.items():
         tokens = list(vocab.tokens_for(category))
         if not tokens:
@@ -164,6 +169,9 @@ def build_dataset(
                 register=register,
                 id_prefix=f"pair-{category}-{i:04d}",
             )
+            pairs_done += 1
+            if pairs_done % 20 == 0 or pairs_done == pairs_total:
+                print(f"[datagen]   pairs {pairs_done}/{pairs_total} ({category})", flush=True)
             if not _token_in_names(person, person_token) or nonperson.name_spans():
                 n_disposition += 2  # drop the whole pair; keep only clean matched contrast
                 continue
@@ -172,12 +180,18 @@ def build_dataset(
                 verifier_targets.append(teacher.verify_tagging(ex.input))
 
     # 2) teacher-distilled single passages per category (context variety)
+    singles_total = sum(_scaled(c, cfg.scale) for c in cfg.category_counts.values())
+    singles_done = 0
+    print(f"[datagen] single passages: ~{singles_total} to generate", flush=True)
     for category, count in cfg.category_counts.items():
         for i in range(_scaled(count, cfg.scale)):
             register = "dialogue" if i % 3 == 0 else "essay"
             ex = teacher.generate(category, register=register, id_=f"gen-{category}-{i:04d}")
             raw.append(ex)
             verifier_targets.append(teacher.verify_tagging(ex.input))
+            singles_done += 1
+            if singles_done % 20 == 0 or singles_done == singles_total:
+                print(f"[datagen]   singles {singles_done}/{singles_total}", flush=True)
 
     # 3) Faker pattern-type negatives (already valid; no verifier needed)
     n_neg = _scaled(cfg.negatives, cfg.scale)
