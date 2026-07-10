@@ -3,9 +3,21 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-09 — **canonical 4-bit QLoRA run landed on Colab T4** (`sft-v3`, authored teacher, 924/102, eval_leak=0). Decisive base-vs-tuned win with every hard ceiling held: recall 0.56→0.96, over_tag 0.53→0.04, integrity 0.55→0.00, consistency 0.25→0.94, pass 0.39→0.96 — see `docs/results.md`→v3-colab (now the canonical line; MPS bf16 v3 kept for lineage). Adapter/reports/splits persisted to `MyDrive/slm-deid-v3/`. The teacher-key blocker is resolved: the in-session AUTHORED teacher (`--provider authored`, NO key), and now the **TrueFoundry LLM Gateway** (`--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`). Now unblocked: the canonical LIVE-teacher 4-bit pass (authored templates are less varied). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
+_Last updated: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
+- **[gpt551] Canonical live-teacher 4-bit QLoRA run — DONE.** Live OpenAI-compatible teacher (TrueFoundry
+  gateway) + independent verifier generated v3 data (818 train / 90 val; drops: 134 verifier-disagreement,
+  98 eval-surface-leak, 48 negative-trap-has-name; `eval_leak=0`). Frozen `configs/train.yaml` 4-bit QLoRA
+  on an A100 (156 steps/3 epochs, loss 0.47→~2e-4). base→tuned on the 51 hard cases: F5 0.51→**0.85**,
+  over_tag 0.55→**0.16**, integrity 0.59→**0.02**, leakage 0.25→**0.08**, pass 0.35→**0.82**, consistency
+  0.38→**0.56**; eval-leakage independently re-verified (0 exact + 0 substring overlaps vs all 201
+  quarantined eval inputs). Removes the authored-data/no-verifier caveat → the credible canonical line.
+  Scores land below the prior authored run (pass 0.82 vs 0.96) — honest read (likely eval-distribution
+  proximity of the templates) in `docs/results.md`→gpt551. Cards: `docs/model-card-gpt551.md`,
+  `docs/dataset-card-v3.md` (live-teacher section). Reports at `outputs/eval_reports_colab_gpt551/`
+  (gitignored); adapter (133 MB) + splits on Drive, not committed. Run enabled by the EOS-token compat
+  fix (PR #35).
 - **Human review of the eval/val data (seal of approval).** Reviewed item-by-item in
   `scripts/review_ui.py` and sealed to `reviews/*.approved.jsonl`: val 102/102 approved, hard-cases test
   set 50/51 approved (1 denied), co-occurrence set 29/29 approved. The 927-row train split is under
