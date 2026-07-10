@@ -170,7 +170,7 @@ def build_dataset(
                 id_prefix=f"pair-{category}-{i:04d}",
             )
             pairs_done += 1
-            if pairs_done % 20 == 0 or pairs_done == pairs_total:
+            if pairs_done % 5 == 0 or pairs_done == pairs_total:
                 print(f"[datagen]   pairs {pairs_done}/{pairs_total} ({category})", flush=True)
             if not _token_in_names(person, person_token) or nonperson.name_spans():
                 n_disposition += 2  # drop the whole pair; keep only clean matched contrast
@@ -190,7 +190,7 @@ def build_dataset(
             raw.append(ex)
             verifier_targets.append(teacher.verify_tagging(ex.input))
             singles_done += 1
-            if singles_done % 20 == 0 or singles_done == singles_total:
+            if singles_done % 5 == 0 or singles_done == singles_total:
                 print(f"[datagen]   singles {singles_done}/{singles_total}", flush=True)
 
     # 3) Faker pattern-type negatives (already valid; no verifier needed)
