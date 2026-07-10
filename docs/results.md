@@ -7,6 +7,9 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
   run (unsloth, Colab T4) on the scaled v3 data (924/102). Decisive base-vs-tuned win with **every hard
   ceiling held**: recall 0.56→0.96, over_tag 0.53→0.04, integrity 0.55→0.00, consistency 0.25→0.94,
   pass 0.39→0.96. Its own baseline (4-bit ≠ the MPS bf16 lineage below).
+- **[v3-colab authored scale=10](#v3-colab-authored-scale10--scaling-ablation-not-canonical) — scaling ablation.**
+  Same authored teacher at scale=10 (2266/102), 4-bit A100. More template data did **not** help: over_tag
+  0.04→0.10, pass 0.96→0.88, `negative_trap` over_tag 0→0.40 vs the scale=2 canonical. Not canonical.
 - **[v3-mps (data rebalance)](#v3-mps-data-rebalance--prior-mps-bf16) — prior (MPS bf16).** Rebalanced +
   scaled data (927/102), bf16. Fixed v2's recall/consistency regression: recall 0.44→0.93, consistency
   0.13→0.75, leakage →0.04, with over-tag/integrity held. Model card: [`docs/model-card-v3.md`](model-card-v3.md).
@@ -194,6 +197,51 @@ python -m src.eval.report \
   (git-ignored like all `outputs/`); the tables above regenerate offline via `python -m src.eval.report`.
   The adapter + exact splits are alongside at `outputs/sft-v3-colab-authored/`. Original Drive copy:
   `MyDrive/slm-deid-authored/` (renamed from `slm-deid-v3/` so the next run can't overwrite it).
+
+---
+
+# v3-colab authored, scale=10 — scaling ablation (NOT canonical)
+
+_Same 4-bit QLoRA recipe and frozen `configs/train.yaml`, same **authored** teacher, but generated at
+`scale=10` → **2266 train / 251 val** (~2.4× the canonical authored run's 924/102). Trained on an A100
+(bf16, 426 steps/3 epochs) and scored on the same 51 quarantined hard cases. `eval_leak = 0` re-verified
+on these exact splits (all three guards: token / surface / passage). Reports:
+`outputs/eval_reports_colab_run2/{base-20260709-225903,tuned-v3-20260709-230012}.json`; adapter + splits:
+`outputs/sft-v3-colab-run2/`. This run was **unintended** (the plan was a live gpt-4o teacher, but
+`PROVIDER` was left on `authored`), so it stands as a clean scale ablation, not a new teacher line._
+
+<!-- Regenerate (offline) with:
+python -m src.eval.report \
+  base=outputs/eval_reports_colab_run2/base-20260709-225903.json \
+  tuned=outputs/eval_reports_colab_run2/tuned-v3-20260709-230012.json -->
+
+## Overall
+
+| model | n | precision | recall | F5 | leakage_rate | over_tag_rate | integrity_violation_rate | pass_rate | consistency |
+|---|---|---|---|---|---|---|---|---|---|
+| base | 51 | 0.326 [0.19, 0.47] | 0.518 [0.32, 0.70] | 0.507 [0.31, 0.69] | 0.255 [0.16, 0.37] | 0.549 [0.43, 0.67] | 0.588 [0.45, 0.71] | 0.353 [0.24, 0.49] | 0.375 |
+| tuned | 51 | 0.806 [0.65, 0.96] | 0.926 [0.81, 1.00] | 0.921 [0.81, 1.00] | 0.039 [0.00, 0.10] | 0.098 [0.02, 0.18] | 0.000 [0.00, 0.00] | 0.882 [0.78, 0.96] | 0.875 |
+| Δ (tuned−base) |  | +0.481 | +0.407 | +0.414 | -0.216 | -0.451 | -0.588 | +0.529 | +0.500 |
+
+## The read — more authored data did NOT help
+
+Scaling the **authored** teacher 2→10 did not beat the canonical authored run (scale=2); it modestly
+**regressed** on the hard cases:
+
+| tuned metric | authored scale=2 (canonical) | authored scale=10 (this) |
+|---|---|---|
+| recall | **0.963** | 0.926 |
+| over_tag_rate | **0.039** | 0.098 |
+| integrity | 0.000 | 0.000 |
+| pass_rate | **0.961** | 0.882 |
+| consistency | **0.938** | 0.875 |
+| `negative_trap` over_tag | **0.000** | **0.400** |
+
+The clearest signal is `negative_trap` over-tag jumping **0.00 → 0.40**: with ~2.4× more template text,
+the model started tagging tokens in no-name passages. This **reinforces the project thesis** — authored
+templates are variety-bounded, so *scale* is not the lever; a frontier teacher's linguistic diversity is.
+The canonical **live-teacher** 4-bit run (`PROVIDER="openai"/"anthropic"`) is therefore still the open
+follow-up. Numbers unchanged from the run's saved reports; this is a faithful record, not a re-run.
 
 ---
 
