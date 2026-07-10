@@ -12,15 +12,18 @@ hand-built gold labels** — never against its own labels — so there is no cir
 Runs on CPU (pure API); no GPU needed. Needs `OPENAI_API_KEY` (and `OPENAI_BASE_URL` for a gateway).
 
     OPENAI_API_KEY=... python -m scripts.eval_frontier --split eval/hardcases --model gpt-4o
-    # gateway:
+    # gateway (set OPENAI_BASE_URL + a model the gateway accepts; note some newer/reasoning models
+    # reject a non-default temperature or need max_completion_tokens — that lives in
+    # build_openai_complete / judge.py, out of scope here):
     OPENAI_API_KEY=... OPENAI_BASE_URL=https://gateway/... \
-        python -m scripts.eval_frontier --split eval/adversarial --model gpt551
+        python -m scripts.eval_frontier --split eval/adversarial --model gpt-4o
 """
 
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import time
 from typing import Callable
 
@@ -29,21 +32,27 @@ from src.eval.judge import build_openai_complete
 from src.eval.run import _load_examples, compare, evaluate, write_report
 from src.infer import FunctionTagger
 
+# A bare code-fence line: ``` optionally followed by a language hint and nothing else.
+_BARE_FENCE = re.compile(r"^```[a-zA-Z0-9_+-]*$")
+
 
 def _postprocess(raw: str) -> str:
-    """Minimal cleanup mirroring HFTagger's ``.strip()``.
+    """Strip whitespace, and — for the frontier reference ONLY — a fully code-fenced wrapper.
 
-    Frontier models sometimes wrap output in a Markdown code fence despite "Output ONLY the tagged
-    text"; strip a single leading/trailing fence so integrity scoring isn't lost to formatting. We
-    do NOT touch the tag markers or any other character — that would bias the fairness of the eval.
+    Deliberate asymmetry, documented: the small **contestants** are scored on plain ``.strip()``
+    (``HFTagger.tag``), with no fence forgiveness. The frontier is a **ceiling reference**, not an
+    apples-to-apples contestant, and frontier chat models routinely wrap output in a Markdown fence
+    despite "Output ONLY the tagged text". Rather than let that formatting tic tank its integrity
+    score, we unwrap a fence — but only a *fully* fenced block: the first line is a bare fence
+    (``` optionally + a language hint, nothing else) AND the last line is a bare ```. That guard
+    means we never drop real content that shares a line with a fence, nor touch a passage that
+    merely starts with ``` without a matching close. Tag markers and every other character stay
+    byte-identical, so the integrity check (output-minus-tags == input) is preserved.
     """
     text = raw.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = lines[1:]  # drop opening ``` (and any language hint on that line)
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        text = "\n".join(lines).strip()
+    lines = text.split("\n")
+    if len(lines) >= 2 and _BARE_FENCE.match(lines[0]) and lines[-1].strip() == "```":
+        text = "\n".join(lines[1:-1]).strip()
     return text
 
 
@@ -66,7 +75,8 @@ def make_frontier_tagger(
                 return _postprocess(complete(prompts.SYSTEM_PROMPT, passage))
             except Exception as e:  # noqa: BLE001 — surface after retries
                 last = e
-                time.sleep(1.0 * (attempt + 1))
+                if attempt < retries - 1:  # no backoff after the final attempt
+                    time.sleep(1.0 * (attempt + 1))
         raise RuntimeError(f"frontier call failed after {retries} attempts: {last}")
 
     return FunctionTagger(tag, name=name)

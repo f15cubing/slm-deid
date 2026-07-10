@@ -30,6 +30,20 @@ def test_postprocess_leaves_tags_untouched():
     assert _postprocess(TAGGED) == TAGGED
 
 
+def test_postprocess_does_not_drop_content_on_partial_fence():
+    # Opening fence but NO matching closing fence: not a fully-fenced block, so leave it alone
+    # rather than silently dropping the tagged content (finding 2 from review).
+    raw = f"```\n{TAGGED}"
+    assert _postprocess(raw) == raw
+
+
+def test_postprocess_does_not_touch_content_sharing_the_fence_line():
+    # Content on the same line as the opening fence must survive (first line isn't a bare fence),
+    # so no unwrap happens and the text is returned as-is (finding 2 from review).
+    raw = f"```{TAGGED}\n```"
+    assert _postprocess(raw) == raw
+
+
 def test_tagger_uses_shared_system_prompt_and_passage():
     seen = {}
 
