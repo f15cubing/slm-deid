@@ -9,16 +9,16 @@ import dataclasses
 import pytest
 
 from src.train.qlora import (
+    coerce_sft_eos_token,
     ensure_hf_base,
     select_amp_flags,
-    sft_eos_token_kwarg,
     training_backend_settings,
 )
 
 
 @dataclasses.dataclass
 class _CfgWithEos:
-    eos_token: str = "<EOS_TOKEN>"  # TRL's placeholder default
+    eos_token: str = "<EOS_TOKEN>"  # TRL/Unsloth placeholder default
 
 
 @dataclasses.dataclass
@@ -30,21 +30,29 @@ class _Tok:
     eos_token = "<|im_end|>"
 
 
-def test_eos_kwarg_pins_real_eos_when_field_present():
-    # TRL's '<EOS_TOKEN>' placeholder is overridden with the tokenizer's real eos.
-    assert sft_eos_token_kwarg(_CfgWithEos, _Tok()) == {"eos_token": "<|im_end|>"}
+def test_coerce_overwrites_placeholder_on_built_config():
+    # The out-of-vocab '<EOS_TOKEN>' placeholder is replaced in place with the real eos, and the
+    # same object is returned (so SFTTrainer reads the corrected value).
+    cfg = _CfgWithEos()
+    out = coerce_sft_eos_token(cfg, _Tok())
+    assert out is cfg
+    assert cfg.eos_token == "<|im_end|>"
 
 
-def test_eos_kwarg_noop_when_field_absent():
-    # Older TRL without the field: don't pass an unknown kwarg (keeps MPS path working).
-    assert sft_eos_token_kwarg(_CfgNoEos, _Tok()) == {}
+def test_coerce_noop_when_field_absent():
+    # Older TRL without the field: don't add an attribute (keeps the hf/MPS path working).
+    cfg = _CfgNoEos()
+    coerce_sft_eos_token(cfg, _Tok())
+    assert not hasattr(cfg, "eos_token")
 
 
-def test_eos_kwarg_noop_when_tokenizer_has_no_eos():
+def test_coerce_noop_when_tokenizer_has_no_eos():
     class _NoEosTok:
         eos_token = None
 
-    assert sft_eos_token_kwarg(_CfgWithEos, _NoEosTok()) == {}
+    cfg = _CfgWithEos()
+    coerce_sft_eos_token(cfg, _NoEosTok())
+    assert cfg.eos_token == "<EOS_TOKEN>"  # left untouched; nothing to pin
 
 
 def test_unsloth_settings_use_8bit_adam():
