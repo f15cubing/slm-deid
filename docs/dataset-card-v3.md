@@ -46,6 +46,33 @@ minimal-pair disposition check, and all eval-leakage guards. **No independent ve
 (label trust rests on the deterministic gates + tags placed by construction). Template text is **less
 varied** than a frontier teacher's — the main limitation of this build.
 
+## Live-teacher build (gpt551) — resolves the caveat above
+On 2026-07-10 the **same v3 recipe** was re-run on Colab with a **live OpenAI-compatible teacher** (model
+id `gpt551`, via the TrueFoundry LLM Gateway — `--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`)
+**plus an independent verifier pass**, producing the data the canonical **`sft-v3-gpt551`** model trained
+on (see `docs/model-card-gpt551.md`, `docs/results.md` → gpt551). This is the frontier-teacher regen the
+authored build flagged as the follow-up, and it removes the "no independent verifier / low variety"
+limitation for this line.
+
+| split | rows | notes |
+|---|---|---|
+| train | **818** | live teacher + verifier; minimal pairs (~400 ×2 calls) + 166 singles, + co-occurrence/CRAPII folds |
+| val | 90 | same generation |
+
+**Drop funnel (live teacher):** `verifier_disagreement 134` (teacher vs independent verifier — the gate
+the authored build lacked), `eval_surface_leak 98`, `negative_trap_has_name 48`,
+`possessive_not_possessive 3`, `verifier_altered_text 3`, `missing_ambiguous_token 1`;
+**`eval_token_leak 0`, `eval_leak 0`.**
+
+**Leakage — independently re-verified (hard ceiling):** beyond the three in-pipeline guards returning 0, a
+post-hoc scan found **0 exact and 0 substring overlaps** between the 818/90 splits and **all 201**
+quarantined eval inputs (hardcases / adversarial / heldout / ood).
+
+**Honest note:** the live-teacher model scores *below* the authored build on the 51 hard cases (pass 0.82
+vs 0.96) — most likely because the authored templates sit closer to the eval distribution; see
+`docs/results.md` → gpt551 for the full read. The splits/adapter/reports persist to Drive; reports are
+mirrored at `outputs/eval_reports_colab_gpt551/` (the 133 MB adapter and the splits are not committed).
+
 ## Quality gates (all enforced; only passing rows kept)
 Integrity (`unwrap(target)==input`), tag well-formedness, schema, category-semantics (negative_trap ⇒ 0
 names; person_vs_* ⇒ intended token present; possessive ⇒ possessive form), minimal-pair disposition
@@ -79,9 +106,10 @@ machine-gated. Sealed approved-only exports live under `reviews/` (git-ignored; 
 from the reviewer). Review decisions are advisory metadata — they do not alter the source splits.
 
 ## Known limitations
-1. **Template-authored** (not frontier-distilled) — less linguistic variety; a frontier-teacher regen
-   is the follow-up. _Labeling_ is no longer fully unreviewed: val + the hard-cases test set are 100%
-   human-approved (see **Human review** above); the 927-row train split is only partially reviewed.
+1. **Template-authored** (not frontier-distilled) — less linguistic variety. _Resolved for the canonical
+   line:_ the **live-teacher gpt551 build** (see above) regenerates this recipe with a real teacher +
+   verifier. _Labeling_ is also no longer fully unreviewed: val + the hard-cases test set are 100%
+   human-approved (see **Human review** above); the 927-row authored train split is only partially reviewed.
 2. **`possessive` contrast remains hard** — eponymous-possessive negatives ("Joule's law") are subtle;
    the eval still shows possessive over-tagging ("Newton's laws").
 3. **CRAPII real slice (109)** carries the NAME_STUDENT under-tagging caveat (`src/datagen/real_data.py`).

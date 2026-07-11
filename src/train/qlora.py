@@ -52,24 +52,20 @@ def select_amp_flags(bf16_supported: bool) -> dict:
     return {"bf16": bool(bf16_supported), "fp16": not bf16_supported}
 
 
-def sft_eos_token_kwarg(sft_config_cls, tokenizer) -> dict:
-    """`{"eos_token": <real eos>}` when SFTConfig has that field, else `{}`.
+def coerce_sft_eos_token(sft_args, tokenizer):
+    """Force the tokenizer's real EOS onto a *built* ``SFTConfig``; return the same object.
 
-    Current TRL's ``SFTConfig`` defaults ``eos_token`` to the placeholder ``'<EOS_TOKEN>'``, not in
-    Qwen's vocab, so ``SFTTrainer`` init rejects it. Pin it to the tokenizer's actual ``eos_token``
-    (the correct stop token for completion-only training). Older TRL has no such field, so we probe
-    the dataclass fields and no-op when absent — keeping the MPS path unbroken.
+    Unsloth patches ``SFTConfig`` to inject the placeholder ``'<EOS_TOKEN>'`` (not in Qwen's
+    vocab) as its ``eos_token`` default; newer TRL's ``SFTTrainer.__init__`` then rejects it as
+    out-of-vocab. Passing ``eos_token=`` as a *constructor kwarg* does not stick — Unsloth's
+    patched ``__init__`` re-injects the placeholder — so we overwrite the attribute *after*
+    construction, right before ``SFTTrainer`` reads it. No-ops when the field is absent (older TRL
+    / the hf-MPS path) or the tokenizer has no eos, leaving those backends untouched.
     """
-    import dataclasses
-
     eos = getattr(tokenizer, "eos_token", None)
-    if not eos:
-        return {}
-    try:
-        names = {f.name for f in dataclasses.fields(sft_config_cls)}
-    except TypeError:
-        names = set(dir(sft_config_cls))
-    return {"eos_token": eos} if "eos_token" in names else {}
+    if eos and hasattr(sft_args, "eos_token"):
+        sft_args.eos_token = eos
+    return sft_args
 
 
 def ensure_hf_base(base_model: str) -> None:
@@ -151,29 +147,32 @@ def train(cfg: dict, smoke: bool = False, output_dir: str | None = None) -> str:
         settings["sft_extra"] = {**settings["sft_extra"], **select_amp_flags(bf16_ok)}
 
     # Modern TRL: completion-only masking is built into SFTConfig (no data collator).
+    sft_args = SFTConfig(
+        completion_only_loss=True,  # loss on the tagged completion only
+        max_length=cfg["max_seq_len"],
+        per_device_train_batch_size=cfg["per_device_train_batch_size"],
+        gradient_accumulation_steps=cfg["gradient_accumulation_steps"],
+        warmup_ratio=cfg["warmup_ratio"],
+        num_train_epochs=epochs,
+        learning_rate=cfg["learning_rate"],
+        lr_scheduler_type=cfg["lr_scheduler_type"],
+        weight_decay=cfg["weight_decay"],
+        seed=cfg["seed"],
+        logging_steps=5,
+        optim=settings["optim"],
+        output_dir=output_dir,
+        report_to="none",
+        **settings["sft_extra"],
+    )
+    # Beat Unsloth's out-of-vocab '<EOS_TOKEN>' placeholder (rejected by newer SFTTrainer).
+    coerce_sft_eos_token(sft_args, tokenizer)
+
     trainer = SFTTrainer(
         model=model,
         processing_class=tokenizer,
         train_dataset=ds,
         peft_config=peft_config,  # None on unsloth (already wrapped); LoraConfig on hf
-        args=SFTConfig(
-            completion_only_loss=True,  # loss on the tagged completion only
-            max_length=cfg["max_seq_len"],
-            per_device_train_batch_size=cfg["per_device_train_batch_size"],
-            gradient_accumulation_steps=cfg["gradient_accumulation_steps"],
-            warmup_ratio=cfg["warmup_ratio"],
-            num_train_epochs=epochs,
-            learning_rate=cfg["learning_rate"],
-            lr_scheduler_type=cfg["lr_scheduler_type"],
-            weight_decay=cfg["weight_decay"],
-            seed=cfg["seed"],
-            logging_steps=5,
-            optim=settings["optim"],
-            output_dir=output_dir,
-            report_to="none",
-            **sft_eos_token_kwarg(SFTConfig, tokenizer),
-            **settings["sft_extra"],
-        ),
+        args=sft_args,
     )
     trainer.train()
     trainer.model.save_pretrained(output_dir)  # saves the LoRA adapter (both backends)
