@@ -3,7 +3,17 @@
 > the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
-_Last updated: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
+_Last updated: 2026-07-11 — **consolidated final report + companion docs authored; STATUS reconciled.**
+The prior "In flight" block was stale: every item had already merged to `main` (PRs #5, #11, #16, #20,
+#22, #27, #36, #37) — rolled into Done below. New this pass: [`docs/final-report.md`](final-report.md)
+(consolidated results + methodology: base vs the two 1.7B tunes vs frontier gpt-4.1 across all 5 sets),
+[`docs/next-steps-testing.md`](next-steps-testing.md), and [`docs/completion-checklist.md`](completion-checklist.md)
+(step-by-step of what's left to ship). An independent data-integrity audit re-ran the suite (**192
+passed, 4 skipped, 0 failed**) and re-verified leakage (**0 exact + 0 substring** overlap, eval vs
+training) — all hard ceilings HELD. Remaining gaps are the Day 5–7 shipping layer (real demo, HF push,
+demo video, BrainLift verdict) + the one unbuilt planned feature (DPO). See the completion checklist._
+
+_Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done
 - **[gpt551] Canonical live-teacher 4-bit QLoRA run — DONE.** Live OpenAI-compatible teacher (TrueFoundry
@@ -122,16 +132,21 @@ _Last updated: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   less varied (a frontier-teacher/canonical 4-bit run is the follow-up). Leakage 0 (3 guards + scan). Cards:
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
-## In flight
-- **Engine comparison + API benchmark (branch `worktree-eval-engine-comparisons`, DRAFT PR #36 — high-risk
+## Done (recent — merged; was "In flight")
+> Reconciled 2026-07-11: every item below has merged to `main` (PRs #5, #11, #16, #20, #22, #27, #36,
+> #37). The wording is kept for provenance; treat all as Done. The complete 4-engine × 5-set matrix (PR
+> #37) is now consolidated in [`docs/final-report.md`](final-report.md).
+
+- **Engine comparison + API benchmark (branch `worktree-eval-engine-comparisons`, MERGED PRs #36/#37 — high-risk
   lane)** — adds (1) `scripts/eval_frontier.py`: score a frontier API model through the same metrics
   pipeline (scored on hand-built gold, no circularity); (2) `scripts/build_api_bench.py` +
   `benchmarks/api_bench/` (92 quarantined examples, live-teacher, gold-by-construction, `eval_leak=0`
   independently re-verified, guarded by `tests/test_api_bench.py`). **Frontier gpt-4.1** run on all 5 sets:
   on the 51 hardcases the 1.7B tunes are competitive (gpt551 pass 0.82, authored 0.96 vs frontier 0.88;
   tunes beat the frontier on recall — gpt-4.1 is precision-first/under-recalls). Numbers: `docs/eval-engine-comparison.md`.
-  Reviewed by a separate agent (fence-handling fix applied). **Pending:** the small-model 3-way
-  (base/authored/gpt551) on the 4 non-hardcases sets must run on Colab (4-bit/CUDA-only). Do not self-merge.
+  Reviewed by a separate agent (fence-handling fix applied). ~~Pending: the small-model 3-way
+  (base/authored/gpt551) on the 4 non-hardcases sets on Colab~~ **— delivered by PR #37** (complete
+  4-engine × 5-set matrix), now consolidated in [`docs/final-report.md`](final-report.md).
 - **OOD generalization probe (branch `worktree-ood-probe`, DRAFT PR — high-risk lane)** — new quarantined
   `eval/ood_probe` (36 cases) built by `scripts/build_ood_probe.py`, with surfaces disjoint from **both**
   the eval set and the training banks (guard in-script + `test_vocab`/`test_no_eval_leakage`). Base-vs-tuned

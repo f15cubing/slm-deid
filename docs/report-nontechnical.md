@@ -2,9 +2,26 @@
 
 *Prepared 2026-07-09 · Current version: v3 · Audience: mixed / semi-technical*
 
+> **⚠️ Update (2026-07-11) — read this first.** This plain-language report was written on 2026-07-09 and
+> is now partly superseded. Two things changed since:
+> 1. **A more credible "canonical" model exists.** This report treats the *authored* (in-house template)
+>    tune as the version to ship. We have since trained the same recipe on data from a **live teacher AI +
+>    an independent verifier** (called **gpt551**), which is the more trustworthy model for real-world
+>    text — its scores on hand-written test templates are a little *lower*, but that's because the
+>    authored tune was flattered by test material that looked like its own training data. **gpt551 is now
+>    the recommended line.**
+> 2. **We now also compare against a frontier model** (a top-tier general model, gpt-4.1). Our tiny 1.7B
+>    tune is *competitive with it* on natural text and actually *catches more real names* on the hardest
+>    cases (the frontier model is cautious and misses ~1 in 5).
+>
+> For the current, complete picture — base vs. our two tunes vs. the frontier model, across five test
+> sets — read **[`docs/final-report.md`](final-report.md)**. The plain-language walkthrough below is still
+> accurate about *the problem, the method, and the iteration story*; just read its "which model ships"
+> and results claims through the update above.
+
 > A plain-language walkthrough of what we've built, how it was trained and tested, and how well it
 > works — with just enough method and numbers to judge the results. For the full technical detail see
-> `docs/model-card-v3.md`, `docs/dataset-card-v3.md`, and `docs/results.md`.
+> `docs/final-report.md`, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`, and `docs/results.md`.
 
 ## The one-sentence version
 
