@@ -79,19 +79,91 @@ cross-check (below) is the mitigation.
 - **Label validation:** the frontier (gpt-4.1) scores **pass 0.848** on it (row above) — a frontier
   agreeing with ~85% of the constructed gold is evidence the labels are sound.
 
-## Pending: the small-model 3-way (Colab) — the remaining numbers
+## Complete 4-engine × 5-set matrix
 
-gpt551 and the 4-bit authored adapter are CUDA-only, so their numbers on `adversarial`, `heldout_names`,
-`ood_probe`, and the new `benchmarks/api_bench` must be produced on Colab (the frontier rows above
-already cover all of them). See the step-by-step below; the eval loop is:
+Produced on Colab (Tesla T4) via `notebooks/eval_engine_comparison_colab.ipynb`, 2026-07-11.
+**base** = prompted 4-bit `Qwen3-1.7B`; **authored** = `sft-v3-colab-authored` (4-bit, template
+teacher); **gpt551** = `sft-v3-gpt551` (4-bit, live teacher); **frontier** = `gpt-4.1` (reference
+ceiling, not a 1.7B contestant). All scored on the same gold + behavioral checks.
 
-```python
-AUTHORED = "outputs/sft-v3-colab-authored"   # Drive path to the 4-bit authored adapter
-GPT551   = "outputs/sft-v3-gpt551"
-SPLITS = ["eval/adversarial", "eval/heldout_names", "eval/ood_probe", "benchmarks/api_bench"]
-for split in SPLITS:
-    !python -m src.eval.run --split {split} --compare base {AUTHORED} {GPT551} \
-        --backend unsloth --report-dir outputs/eval_bench_$(basename {split})
-```
+### Pass rate at a glance
 
-Drop those numbers in here (or hand me the reports) to complete the 4-engine × 5-set matrix.
+| set (n) | base | authored | gpt551 | frontier gpt-4.1 |
+|---|---|---|---|---|
+| hardcases (51) | 0.392 | **0.902** | 0.824 | 0.882 |
+| adversarial (40) | 0.150 | 0.875 | 0.775 | **0.950** |
+| heldout_names (74) | 0.338 | **0.973** | 0.865 | 0.919 |
+| ood_probe (36) | 0.278 | 0.889 | 0.778 | **1.000** |
+| **api_bench (92)** | 0.130 | 0.609 | **0.815** | 0.848 |
+
+### Full metrics per set (recall / leakage / over_tag / integrity / pass / consistency)
+
+**hardcases (51)**
+
+| engine | recall | leakage | over_tag | integrity | pass | consistency |
+|---|---|---|---|---|---|---|
+| base | 0.556 | 0.235 | 0.529 | 0.549 | 0.392 | 0.250 |
+| authored | 0.963 | 0.020 | 0.098 | 0.000 | 0.902 | 0.875 |
+| gpt551 | 0.852 | 0.078 | 0.157 | 0.020 | 0.824 | 0.562 |
+| frontier-gpt4.1 | 0.778 | 0.118 | 0.000 | 0.020 | 0.882 | 0.625 |
+
+**adversarial (40)**
+
+| engine | recall | leakage | over_tag | integrity | pass | consistency |
+|---|---|---|---|---|---|---|
+| base | 0.185 | 0.550 | 0.625 | 0.675 | 0.150 | 0.857 |
+| authored | 0.815 | 0.125 | 0.050 | 0.025 | 0.875 | 0.714 |
+| gpt551 | 0.741 | 0.175 | 0.125 | 0.050 | 0.775 | 0.714 |
+| frontier-gpt4.1 | 0.963 | 0.025 | 0.025 | 0.025 | 0.950 | 0.857 |
+
+**heldout_names (74)**
+
+| engine | recall | leakage | over_tag | integrity | pass | consistency |
+|---|---|---|---|---|---|---|
+| base | 0.500 | 0.243 | 0.595 | 0.622 | 0.338 | 0.540 |
+| authored | 1.000 | 0.000 | 0.027 | 0.000 | 0.973 | 0.946 |
+| gpt551 | 1.000 | 0.000 | 0.135 | 0.000 | 0.865 | 0.946 |
+| frontier-gpt4.1 | 1.000 | 0.000 | 0.081 | 0.000 | 0.919 | 0.892 |
+
+**ood_probe (36)** — held-out vocab (disjoint from training)
+
+| engine | recall | leakage | over_tag | integrity | pass | consistency |
+|---|---|---|---|---|---|---|
+| base | 0.421 | 0.306 | 0.639 | 0.611 | 0.278 | 0.700 |
+| authored | 0.947 | 0.028 | 0.111 | 0.000 | 0.889 | 0.800 |
+| gpt551 | 0.789 | 0.111 | 0.167 | 0.000 | 0.778 | 0.500 |
+| frontier-gpt4.1 | 1.000 | 0.000 | 0.000 | 0.000 | 1.000 | 1.000 |
+
+**api_bench (92)** — live-teacher-generated benchmark (no paraphrase groups → consistency n/a)
+
+| engine | recall | leakage | over_tag | integrity | pass | consistency |
+|---|---|---|---|---|---|---|
+| base | 0.130 | 0.565 | 0.543 | 0.565 | 0.130 | – |
+| authored | 0.707 | 0.217 | 0.185 | 0.011 | 0.609 | – |
+| gpt551 | 0.724 | 0.141 | 0.065 | 0.022 | 0.815 | – |
+| frontier-gpt4.1 | 0.870 | 0.109 | 0.098 | 0.054 | 0.848 | – |
+
+## The read (complete matrix)
+
+1. **Every fine-tune massively beats the prompted base, everywhere.** base pass ranges 0.13–0.39;
+   the tunes 0.61–0.97. base leaks 0.24–0.57 of names and over-tags 0.53–0.64; both tunes cut those to
+   single/low-double digits. The fine-tune — not the backend or the teacher — is the dominant effect.
+2. **The distribution-match reveal (the headline).** On the four template-adjacent sets, **authored
+   leads** (hardcases 0.90, heldout 0.97, ood 0.89, adversarial 0.875). But on **`api_bench` —
+   naturally-worded passages from a live teacher — authored *collapses to 0.609* while gpt551 holds at
+   0.815** (right next to the frontier's 0.848). gpt551 was trained on that same live teacher, so it is
+   robust to natural prose; authored was trained on hand-written templates, so it degrades on text that
+   doesn't look like its training set. This is direct evidence that **authored's edge on the other sets
+   is partly eval-distribution proximity, and gpt551 is the more credible model for real-world text.**
+3. **Frontier gpt-4.1 wins where structure is trickiest, ties where judgment is narrow.** It is
+   near-perfect on `adversarial` (0.950) and `ood_probe` (1.000), but on `hardcases` (0.882) and
+   `api_bench` (0.848) the 1.7B tunes rival it — and both tunes **out-recall** it on hardcases (0.96/0.85
+   vs 0.78: the frontier is precision-first and withholds when unsure, which for de-id means it *leaks*
+   more, 0.118 vs 0.02/0.08). A 1.7B model matching a frontier on the privacy-critical axis is the result.
+4. **Net:** gpt551 is the recommended line — competitive with the frontier and robust across
+   distributions; authored posts the highest template-set numbers but is the least robust to natural text.
+
+_Caveat: n is small per set (36–92), single seed. Minor run-to-run variance exists — e.g. an earlier
+standalone eval of the authored adapter reported hardcases pass 0.96 vs 0.90 here. Treat gaps within a
+few points as ties; the load-bearing results are the base→tune uplift and the api_bench authored↓/gpt551↑
+divergence, both large._
