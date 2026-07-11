@@ -123,6 +123,15 @@ _Last updated: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## In flight
+- **Engine comparison + API benchmark (branch `worktree-eval-engine-comparisons`, DRAFT PR #36 — high-risk
+  lane)** — adds (1) `scripts/eval_frontier.py`: score a frontier API model through the same metrics
+  pipeline (scored on hand-built gold, no circularity); (2) `scripts/build_api_bench.py` +
+  `benchmarks/api_bench/` (92 quarantined examples, live-teacher, gold-by-construction, `eval_leak=0`
+  independently re-verified, guarded by `tests/test_api_bench.py`). **Frontier gpt-4.1** run on all 5 sets:
+  on the 51 hardcases the 1.7B tunes are competitive (gpt551 pass 0.82, authored 0.96 vs frontier 0.88;
+  tunes beat the frontier on recall — gpt-4.1 is precision-first/under-recalls). Numbers: `docs/eval-engine-comparison.md`.
+  Reviewed by a separate agent (fence-handling fix applied). **Pending:** the small-model 3-way
+  (base/authored/gpt551) on the 4 non-hardcases sets must run on Colab (4-bit/CUDA-only). Do not self-merge.
 - **OOD generalization probe (branch `worktree-ood-probe`, DRAFT PR — high-risk lane)** — new quarantined
   `eval/ood_probe` (36 cases) built by `scripts/build_ood_probe.py`, with surfaces disjoint from **both**
   the eval set and the training banks (guard in-script + `test_vocab`/`test_no_eval_leakage`). Base-vs-tuned
