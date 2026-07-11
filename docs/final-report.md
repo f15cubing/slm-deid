@@ -156,9 +156,12 @@ Complete 4-engine × 5-set **pass-rate** matrix (Colab Tesla T4, 2026-07-11; fro
 |---|---|---|---|---|
 | hardcases (51) | 0.392 | **0.902** | 0.824 | 0.882 |
 | adversarial (40) | 0.150 | 0.875 | 0.775 | **0.950** |
-| heldout_names (74) | 0.338 | **0.973** | 0.865 | 0.919 |
+| heldout_names (74) | 0.338 | 0.973 †ᴴ | 0.865 | 0.919 |
 | ood_probe (36) | 0.278 | 0.889 | 0.778 | **1.000** |
 | api_bench (92) | 0.130 | 0.609 | **0.815** | 0.848 |
+
+_†ᴴ The `authored` heldout figure is a bf16 MPS carry-over, not a 4-bit result — see the §3.3 heldout
+footnote. All other cells are the genuine 4-bit/API session._
 
 The prompted base passes only **0.13–0.39** of passages; the fine-tunes pass **0.61–0.97**. The base
 leaks 0.24–0.57 of names and over-tags 0.53–0.64 of non-names; both tunes cut those to single/low-double
@@ -220,14 +223,17 @@ under both (0.902 and 0.961 both exceed 0.882)._
 | engine | recall | leakage | over_tag | integrity | pass | consistency |
 |---|---|---|---|---|---|---|
 | base | 0.500 | 0.243 | 0.595 | 0.622 | 0.338 | 0.540 |
-| authored † | 1.000 | 0.000 | 0.027 | 0.000 | 0.973 | 0.946 |
+| authored (bf16 MPS) † | 1.000 | 0.000 | 0.027 | 0.000 | 0.973 | 0.946 |
 | gpt551 | 1.000 | 0.000 | 0.135 | 0.000 | 0.865 | 0.946 |
 | frontier gpt-4.1 | 1.000 | 0.000 | 0.081 | 0.000 | 0.919 | 0.892 |
 
-_† The authored heldout row is byte-identical across all metrics to the **bf16 MPS** `sft-v3-mps` run in
-`docs/heldout-names-testset.md`, so its provenance as a 4-bit result is uncertain (likely carried over
-from the MPS run). Read the authored heldout row as indicative, not a confirmed 4-bit number; the gpt551
-and base rows are the 4-bit Colab session._
+_† **Provenance correction (2026-07-11, verified).** This `authored` row is the **bf16 MPS `sft-v3-mps`**
+result (from `docs/heldout-names-testset.md`), byte-identical across all six metrics — **not** a 4-bit
+Colab number like the other rows. A 4-bit-Colab eval of `sft-v3-colab-authored` on `eval/heldout_names`
+was never run (confirmed absent from all saved reports), so this cell is carried over from the bf16 MPS
+sibling model. The `base`, `gpt551`, and `frontier` rows ARE the genuine 4-bit/API session. Read the
+authored heldout row as a bf16 reference, not an apples-to-apples 4-bit result; the pending 4-bit re-run
+(command in `docs/next-steps-testing.md` §1.2) will replace it._
 
 **ood_probe (36)** — held-out vocab (disjoint from training)
 
