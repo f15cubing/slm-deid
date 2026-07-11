@@ -22,6 +22,21 @@ rows are the genuine 4-bit/API session. The 4-bit re-run is CUDA-only (command i
 
 _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
+## In flight
+- **[DPO] Stretch rung 1 — code layer shipped; numbers pending the Colab run (draft PR, high-risk lane).**
+  The one planned-but-unbuilt feature (Day-5 stretch). Local, CPU-buildable layer is done and tested:
+  `src/train/prefs.py` (hybrid preference-pair builder — Stage-A on-policy negatives from the SFT model's
+  genuine errors + Stage-B deterministic gold-span perturbations: over-tag / missed-name / wrong-boundary,
+  round-robined), `src/train/dpo.py` (TRL `DPOTrainer` on the gpt551 SFT adapter; ref = adapter-disabled
+  base; `PatchDPOTrainer` ordered before build), frozen `configs/dpo.yaml` (β=0.1, DPO-lr 5e-6, 1 epoch —
+  **new knobs**, the SFT `configs/train.yaml` is untouched), and `notebooks/dpo_colab.ipynb` (Stage-A
+  sampling → DPO → base/SFT/DPO eval across the quarantined sets). 23 new CPU tests; full suite 210
+  passed / 4 skipped; ruff clean. **Leakage held:** `eval_leak_count == 0` on a local dry run of the
+  927-row split (927 → 352 pairs, all 9 categories). **No results claimed yet** — per the hard ceiling,
+  the base-vs-SFT-vs-DPO table is filled only from the Colab run (`docs/model-card-dpo.md` → Results is
+  intentionally empty). Verify on Colab: the stale `trl>=0.9` pin (needs ≥0.20) + `PatchDPOTrainer`
+  ordering. Card: `docs/model-card-dpo.md`.
+
 ## Done
 - **[gpt551] Canonical live-teacher 4-bit QLoRA run — DONE.** Live OpenAI-compatible teacher (TrueFoundry
   gateway) + independent verifier generated v3 data (818 train / 90 val; drops: 134 verifier-disagreement,
