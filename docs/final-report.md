@@ -305,7 +305,7 @@ distributions. authored posts the highest template-set numbers but is the least 
 
 **SPOV 7's falsifiable bet — "fine-tuning beats prompting on the hard, ambiguous name cases" — holds.**
 The prompted base passes 0.13–0.39; the fine-tune passes 0.61–0.97, with the privacy-critical leakage
-rate cut from 0.24–0.57 down to single digits, and integrity violations driven to ~0. The credible
+rate cut from 0.24–0.57 down into the single/low-double digits, and integrity violations driven to ~0. The credible
 canonical line (gpt551) is competitive with a frontier model on the two natural-prose sets and
 out-recalls it on the hardest cases. **For this narrow, safety-critical behavior, reliability engineered
 through data beats capability accessed through prompting** — and it runs privately on modest hardware.

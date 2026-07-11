@@ -61,7 +61,8 @@ Ordered so each step unblocks the next. Each is an upload/record/write task on t
 ### Step 4 — Write the BrainLift empirical verdict  ⟶ checklist #4
 - Add a verdict section to `docs/brainlift.md` (or a linked `brainlift-verdict.md`) resolving SPOV 7's
   falsifiable bet with the gpt551 numbers: *did fine-tune beat prompting on the hard cases?* (Yes —
-  pass 0.13–0.39 → 0.61–0.97, leakage cut to single digits, competitive with frontier on natural prose.)
+  pass 0.13–0.39 → 0.61–0.97, leakage cut into the single/low-double digits, competitive with frontier
+  on natural prose.)
 - **Acceptance:** the source-of-truth doc states the outcome, win-or-lose, with a pointer to the report.
 - _Pure writing task; evidence already exists._
 
