@@ -13,6 +13,13 @@ passed, 4 skipped, 0 failed**) and re-verified leakage (**0 exact + 0 substring*
 training) — all hard ceilings HELD. Remaining gaps are the Day 5–7 shipping layer (real demo, HF push,
 demo video, BrainLift verdict) + the one unbuilt planned feature (DPO). See the completion checklist._
 
+_Provenance correction (2026-07-11): the matrix `heldout_names` × `authored` cell was confirmed to be a
+bf16 MPS `sft-v3-mps` carry-over (byte-identical), not a 4-bit result — the 4-bit eval of
+`sft-v3-colab-authored` on `eval/heldout_names` was never run (absent from all saved reports). That cell
+is now labelled bf16-MPS in `docs/eval-engine-comparison.md` + `docs/final-report.md`; base/gpt551/frontier
+rows are the genuine 4-bit/API session. The 4-bit re-run is CUDA-only (command in
+`docs/next-steps-testing.md` §1.2)._
+
 _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## Done

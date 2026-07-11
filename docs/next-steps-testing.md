@@ -25,12 +25,24 @@ and widening the evidence base** — not about whether the core thesis holds.
 CIs. **Payoff:** turns "likely a tie" into a defensible statement and confirms the api_bench
 authored↓/gpt551↑ divergence is not a seed artifact. **Cost:** eval-only, hours on Colab.
 
-### 1.2 Reconcile backend provenance in the matrix
-**Why:** the numbers audit flagged that a few matrix rows mix bf16-MPS and 4-bit-Colab runs (heldout
-`authored` row is byte-identical to the MPS run; some `ood`/`heldout` base rows differ across docs).
-**Do:** re-run the affected rows (heldout authored, ood base/authored) on the 4-bit Colab backend so the
-whole matrix is one backend, and delete the carried-over MPS numbers. **Payoff:** a single-provenance
-matrix with no footnotes. **Cost:** one Colab eval pass.
+### 1.2 Reconcile backend provenance in the matrix  ⟵ partially resolved 2026-07-11
+**Status:** the `heldout_names` `authored` cell was **confirmed** (not just suspected) to be a bf16 MPS
+carry-over: it is byte-identical to the `sft-v3-mps` run in `docs/heldout-names-testset.md`, and a
+4-bit-Colab eval of `sft-v3-colab-authored` on `eval/heldout_names` is **absent from every saved report**
+— it was never run. The docs are now corrected to label that one cell as bf16-MPS (dagger footnotes in
+`eval-engine-comparison.md` and `final-report.md`); the value is no longer presented as a 4-bit result.
+**Remaining (needs Colab/CUDA — 4-bit is not runnable on Mac/MPS):** produce the genuine 4-bit number and
+replace the row. One eval pass:
+```
+python -m src.eval.run \
+  --split eval/heldout_names \
+  --compare base outputs/sft-v3-colab-authored \
+  --backend unsloth \
+  --report-dir outputs/eval_reports_heldout_authored_4bit
+```
+Then regenerate the table (`python -m src.eval.report base=… tuned=…`), drop the † footnotes, and update
+STATUS. Also re-check the `ood`/`heldout` **base** rows, which differ across docs for the same MPS-vs-4bit
+reason. **Payoff:** a single-provenance matrix with no footnotes.
 
 ### 1.3 LLM-judge as a reported dimension (not just code)
 **Why:** `src/eval/judge.py` scores the 4 rubric dimensions (spec adherence / robustness / task quality /

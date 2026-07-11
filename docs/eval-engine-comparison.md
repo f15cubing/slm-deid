@@ -84,7 +84,9 @@ cross-check (below) is the mitigation.
 Produced on Colab (Tesla T4) via `notebooks/eval_engine_comparison_colab.ipynb`, 2026-07-11.
 **base** = prompted 4-bit `Qwen3-1.7B`; **authored** = `sft-v3-colab-authored` (4-bit, template
 teacher); **gpt551** = `sft-v3-gpt551` (4-bit, live teacher); **frontier** = `gpt-4.1` (reference
-ceiling, not a 1.7B contestant). All scored on the same gold + behavioral checks.
+ceiling, not a 1.7B contestant). All scored on the same gold + behavioral checks. **One exception,
+marked † below:** the `authored` cell on `heldout_names` is a bf16 MPS carry-over, not a 4-bit result
+(the 4-bit eval was never run) — see the heldout table footnote.
 
 ### Pass rate at a glance
 
@@ -92,7 +94,7 @@ ceiling, not a 1.7B contestant). All scored on the same gold + behavioral checks
 |---|---|---|---|---|
 | hardcases (51) | 0.392 | **0.902** | 0.824 | 0.882 |
 | adversarial (40) | 0.150 | 0.875 | 0.775 | **0.950** |
-| heldout_names (74) | 0.338 | **0.973** | 0.865 | 0.919 |
+| heldout_names (74) | 0.338 | 0.973 † | 0.865 | 0.919 |
 | ood_probe (36) | 0.278 | 0.889 | 0.778 | **1.000** |
 | **api_bench (92)** | 0.130 | 0.609 | **0.815** | 0.848 |
 
@@ -121,9 +123,18 @@ ceiling, not a 1.7B contestant). All scored on the same gold + behavioral checks
 | engine | recall | leakage | over_tag | integrity | pass | consistency |
 |---|---|---|---|---|---|---|
 | base | 0.500 | 0.243 | 0.595 | 0.622 | 0.338 | 0.540 |
-| authored | 1.000 | 0.000 | 0.027 | 0.000 | 0.973 | 0.946 |
+| authored (bf16 MPS) † | 1.000 | 0.000 | 0.027 | 0.000 | 0.973 | 0.946 |
 | gpt551 | 1.000 | 0.000 | 0.135 | 0.000 | 0.865 | 0.946 |
 | frontier-gpt4.1 | 1.000 | 0.000 | 0.081 | 0.000 | 0.919 | 0.892 |
+
+_† **Provenance correction (2026-07-11).** This `authored` row is **not** a 4-bit Colab number like the
+rest of the matrix — it is the **bf16 MPS `sft-v3-mps`** result (n=74, from `docs/heldout-names-testset.md`),
+byte-identical across all six metrics (verified). No 4-bit-Colab eval of `sft-v3-colab-authored` on
+`eval/heldout_names` was ever run — confirmed absent from all saved reports. The `base`, `gpt551`, and
+`frontier` rows here ARE the genuine 4-bit/API session. Read the authored heldout row as a bf16 reference,
+not an apples-to-apples 4-bit result. **To close this:** run the 4-bit eval on Colab and replace the row —
+`python -m src.eval.run --split eval/heldout_names --compare base outputs/sft-v3-colab-authored --backend unsloth`
+(tracked in `docs/next-steps-testing.md` §1.2)._
 
 **ood_probe (36)** — held-out vocab (disjoint from training)
 
@@ -149,7 +160,8 @@ ceiling, not a 1.7B contestant). All scored on the same gold + behavioral checks
    the tunes 0.61–0.97. base leaks 0.24–0.57 of names and over-tags 0.53–0.64; both tunes cut those to
    single/low-double digits. The fine-tune — not the backend or the teacher — is the dominant effect.
 2. **The distribution-match reveal (the headline).** On the four template-adjacent sets, **authored
-   leads** (hardcases 0.90, heldout 0.97, ood 0.89, adversarial 0.875). But on **`api_bench` —
+   leads** (hardcases 0.90, heldout 0.97 †, ood 0.89, adversarial 0.875 — the heldout figure is a bf16
+   MPS number pending a 4-bit re-run, see the table footnote). But on **`api_bench` —
    naturally-worded passages from a live teacher — authored *collapses to 0.609* while gpt551 holds at
    0.815** (right next to the frontier's 0.848). gpt551 was trained on that same live teacher, so it is
    robust to natural prose; authored was trained on hand-written templates, so it degrades on text that
