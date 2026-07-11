@@ -134,9 +134,17 @@ def load_records(rel_path: str) -> dict:
     reviews = load_reviews(rel_path)
     records: list[dict] = []
     stats = {
-        "total": 0, "valid": 0, "invalid": 0, "with_spans": 0, "quarantine": 0,
-        "approved": 0, "denied": 0, "pending": 0,
-        "categories": {}, "registers": {}, "sources": {},
+        "total": 0,
+        "valid": 0,
+        "invalid": 0,
+        "with_spans": 0,
+        "quarantine": 0,
+        "approved": 0,
+        "denied": 0,
+        "pending": 0,
+        "categories": {},
+        "registers": {},
+        "sources": {},
     }
 
     with target.open(encoding="utf-8") as f:
