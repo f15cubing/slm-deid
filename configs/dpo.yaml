@@ -14,7 +14,7 @@
 
 # Policy init: the SFT LoRA to start DPO from. On Colab this is the gpt551 adapter mounted from
 # Drive (MyDrive/slm-deid-v3/...); override to a local adapter dir for an MPS smoke.
-sft_adapter: outputs/sft-v3-colab-gpt551
+sft_adapter: outputs/sft-gpt551
 base_model: unsloth/Qwen3-1.7B-unsloth-bnb-4bit   # hf/MPS smoke: Qwen/Qwen3-1.7B
 max_seq_len: 2048
 max_prompt_len: 1024

@@ -30,8 +30,8 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   round-robined), `src/train/dpo.py` (TRL `DPOTrainer` on the gpt551 SFT adapter; ref = adapter-disabled
   base; `PatchDPOTrainer` ordered before build), frozen `configs/dpo.yaml` (β=0.1, DPO-lr 5e-6, 1 epoch —
   **new knobs**, the SFT `configs/train.yaml` is untouched), and `notebooks/dpo_colab.ipynb` (Stage-A
-  sampling → DPO → base/SFT/DPO eval across the quarantined sets). 23 new CPU tests; full suite 210
-  passed / 4 skipped; ruff clean. **Leakage held:** `eval_leak_count == 0` on a local dry run of the
+  sampling → DPO → base/SFT/DPO eval across the quarantined sets). 19 new CPU tests; full suite
+  passing; ruff clean. **Leakage held:** `eval_leak_count == 0` on a local dry run of the
   927-row split (927 → 352 pairs, all 9 categories). **No results claimed yet** — per the hard ceiling,
   the base-vs-SFT-vs-DPO table is filled only from the Colab run (`docs/model-card-dpo.md` → Results is
   intentionally empty). Verify on Colab: the stale `trl>=0.9` pin (needs ≥0.20) + `PatchDPOTrainer`

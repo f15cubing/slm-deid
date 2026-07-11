@@ -79,6 +79,28 @@ def test_wrong_boundary_swallows_possessive():
     assert "Aria's" in {t.text for t in tags.tagged_spans(rej)}
 
 
+def test_wrong_boundary_preserves_integrity_with_adjacent_names():
+    # Two adjacent names; the last-in-LIST span (Ann) is NOT positionally last. Extending it must
+    # not swallow the following gold name (Bob) — that would overlap and break unwrap==input.
+    # Build the Example with spans deliberately out of positional order to stress the fix.
+    text = "Ann Bob left early"
+    spans = [Span(4, 7, "Bob", True), Span(0, 3, "Ann", True)]  # unsorted on purpose
+    ex = Example(
+        id="adj",
+        input=text,
+        target="⟨NAME⟩Ann⟨/NAME⟩ ⟨NAME⟩Bob⟨/NAME⟩ left early",
+        category="third_party",
+        spans=spans,
+        source="synthetic_teacher",
+    ).validate()
+    rej = make_wrong_boundary(ex)
+    if rej is not None:
+        assert tags.is_well_formed(rej) and tags.unwrap(rej) == text  # integrity preserved
+    # And the orchestrator never emits a non-integrity deterministic negative regardless.
+    pair = stage_b_pair(ex, preferred="wrong_boundary")
+    assert pair is None or tags.unwrap(pair.rejected) == text
+
+
 def test_negative_trap_only_supports_over_tag():
     # No gold name → missed/boundary are inapplicable; over-tag targets the trap word.
     assert make_missed_name(EX_TRAP) is None

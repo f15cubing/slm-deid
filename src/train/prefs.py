@@ -173,7 +173,11 @@ def make_wrong_boundary(ex: Example) -> str | None:
     gold = _gold_spans(ex)
     if not gold:
         return None
-    start, end = gold[-1]
+    # Extend the POSITIONALLY-last span (by end offset), not gold[-1]: the last-in-list span may
+    # not be last in the text, and extending a non-final span could swallow a following gold name,
+    # producing overlapping spans that _render would duplicate (breaking unwrap==input). The
+    # positionally-last span can only extend over trailing non-name text, so integrity is preserved.
+    start, end = max(gold, key=lambda s: s[1])
     rest = ex.input[end:]
     if rest[:2] == "'s":  # "Sarah" -> "Sarah's"
         new_end = end + 2
@@ -204,7 +208,10 @@ def stage_b_pair(ex: Example, preferred: str | None = None) -> Pair | None:
     order = ([preferred] if preferred else []) + [s for s in _ROTATION if s != preferred]
     for strat in order:
         rejected = _STRATEGY_FN[strat](ex)
-        if rejected is not None:
+        # Deterministic negatives MUST be pure judgment errors (markers-only): enforce the
+        # integrity invariant here so a future perturbation bug can never leak an altered passage
+        # into training. (Stage-A on-policy negatives may legitimately drift, so no guard there.)
+        if rejected is not None and tags.unwrap(rejected) == ex.input:
             return Pair(ex.id, ex.category, ex.input, ex.target, rejected, strat)
     return None
 
