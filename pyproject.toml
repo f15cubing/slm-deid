@@ -22,3 +22,5 @@ select = ["E", "F", "I", "UP", "B"]
 # Embedded HTML/CSS/JS template served by the local review UI — long style/markup
 # lines are the natural form and wrapping them hurts readability.
 "scripts/review_ui.py" = ["E501"]
+# Same: the eval-suite viewer inlines an HTML/CSS/JS template as a string literal.
+"scripts/build_eval_viewer.py" = ["E501"]
