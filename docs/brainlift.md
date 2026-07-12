@@ -144,6 +144,57 @@ Three design questions remain resolved as below.
 
 ---
 
+## Empirical verdict [v3] — did data→behavior hold?
+
+*Added 2026-07-12, closing the loop the plan required ("BrainLift — whether data→behavior held, with
+evidence"). Resolves SPOV 7's falsifiable bet. Numbers are the canonical live-teacher run
+(`sft-v3-gpt551`) on the 51 quarantined hard cases; full tables + 95% bootstrap CIs in
+[`results.md`](results.md) → gpt551 and [`final-report.md`](final-report.md).*
+
+**The bet (SPOV 7 falsifier).** *If a fine-tune does not beat prompting on the hard, ambiguous
+name-in-context cases, pivot.* This was a real falsifiable claim, not decoration.
+
+**Verdict: the bet HELD — data→behavior held, not refuted.** Fine-tuning the same 1.7B model on the
+judgment dataset beat the prompted base on **every** axis, with CIs separated on the recall-family
+metrics:
+
+| | Prompted base | Fine-tuned (gpt551) |
+|---|---|---|
+| F5 / recall | 0.51 / 0.52 | **0.85 / 0.85** |
+| pass rate | 0.35 | **0.82** |
+| over-tag ↓ | 0.55 | **0.16** |
+| integrity violation ↓ | 0.59 | **0.02** |
+| leakage ↓ | 0.26 | **0.08** |
+
+- **It's judgment, not memorization (SPOV 8 confirmed).** On names **never seen in training**
+  (held-out-names probe) base→tuned recall went 0.08 → 1.00; on a surface-disjoint OOD probe,
+  0.05 → 0.89. The behavior transferred to novel tokens — the model learned the *decision*, not the
+  vocabulary. This is the strongest evidence that the **dataset** (SPOV 1) is what did the work.
+- **Right tool on the merits (SPOV 6), quantified.** A frontier model (gpt-4.1) scored pass 0.88 on
+  the same hard cases — the 1.7B local tune (0.82) is *competitive* and actually **beats the frontier
+  on recall** (gpt-4.1 is precision-first and under-recalls). A model that can be run locally on
+  credentialed data is within striking distance of one that legally cannot be. See
+  [`eval-engine-comparison.md`](eval-engine-comparison.md).
+- **The leakage ceiling held (SPOV 2/4).** 0 exact + 0 substring overlap between the 818/90 training
+  splits and all 201 quarantined eval inputs, independently re-verified; enforced in CI.
+
+**Honest limits — reported, not hidden.**
+1. **Small evidence base.** n=51 hard cases, single seed, single teacher + single verifier pass. The
+   deliverable is the *protocol + a CI-bounded pilot*, not a significant effect (SPOV 1's own caveat).
+2. **gpt551 scores below the earlier authored run** (pass 0.82 vs 0.96). We do **not** claim it beats
+   it — the most likely reason is distributional (authored templates sit closer to the eval), which
+   makes the live-teacher number the more *credible* estimate, not the highest one.
+3. **`possessive` is the unmoved category** and carries the single residual integrity violation — the
+   clearest next data-iteration target (a data fix, per the Day-4 rule, never an HP tweak).
+4. **Byte-identity on messy real text still fails** under the "regenerate the passage verbatim" output
+   format (SPOV 4's format-vs-content gap made concrete); the pipeline's tag-by-offset projection is
+   the structural fix (`unwrap(project(...)) == original` by construction), not more training.
+
+**Bottom line:** on this task, against this baseline, reliability engineered through data beat
+capability accessed through prompting — the project's core thesis, measured and held.
+
+---
+
 ## Source Index
 
 *Conclusions above derive from three internal research briefs —* ***Avenue 1 (quasi-identifiers), Avenue 2 (synthetic data / sim-to-real), Avenue 3 (architecture & fine-tuning)*** *— plus the v1 evidence base.*

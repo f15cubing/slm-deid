@@ -8,6 +8,10 @@ Pattern types (email / phone / ID) and output format are handled by regex + cons
 the surrounding pipeline. The **trained behavior, the dataset, and the eval are all about the
 judgment core**.
 
+> **Try it:** `python -m src.demo --adapter <sft-v3-gpt551 path>` runs the prompted base vs. the
+> fine-tune side-by-side on the ambiguous cases. Submission steps (HF push, demo video):
+> [`docs/submission-runbook.md`](docs/submission-runbook.md).
+
 ## The behavior (the gate)
 
 > Given a passage of educational text (student essay or tutoring-chat turn), the model returns it
