@@ -20,13 +20,20 @@ Two documentation-staleness items are also fixed as part of this pass (STATUS "I
 
 ## Submission package status
 
+> **Update 2026-07-12 (branch `worktree-ship-submission`):** the code/writing layer for every
+> remaining item is now built and green (202 passed) — real `src/demo.py`, consolidated
+> `MODEL_CARD.md`, `scripts/push_to_hub.py` + `scripts/push_dataset.py` (both eval-leakage guarded),
+> and the BrainLift verdict. What's left is **execution only**: run the three cells in
+> [`submission-runbook.md`](submission-runbook.md) on Colab (push model, push dataset, record demo).
+> The table below is updated to reflect that.
+
 | # | Checklist item | Status | What proves it / what's missing |
 |---|---|---|---|
-| 1 | Dataset published, quarantine documented | **PARTIAL** | In-repo + documented (`dataset-card-v3.md`) + leakage-guarded + human-reviewed. **Missing:** external publication (HF Datasets Hub or a linked release). |
-| 2 | Model on HF Hub + running demo | **MISSING / PARTIAL** | Adapter exists on Drive, never pushed. No real `src/demo.py` (the `pipeline/cli --demo` is a heuristic stub, *not* the model). |
+| 1 | Dataset published, quarantine documented | **READY TO PUSH** | In-repo + documented + leakage-guarded + human-reviewed. `scripts/push_dataset.py` publishes it (guard: 0 quarantine, 0 eval overlap, verified). **Left:** run the push cell. |
+| 2 | Model on HF Hub + running demo | **READY TO PUSH** | Real `src/demo.py` (base-vs-tuned side-by-side, tested) + consolidated `MODEL_CARD.md` + `scripts/push_to_hub.py` (eval-leak guarded). **Left:** run the push cell (adapter is on Drive). |
 | 3 | Eval harness + results table (base vs tuned, deltas) | **DONE** | `src/eval/*` + `docs/results.md` + 4-engine × 5-set matrix + this report. |
-| 4 | BrainLift verdict (did data→behavior hold) | **PARTIAL** | Numbers exist in `results.md`; **not folded back** into `docs/brainlift.md` as a verdict section. |
-| 5 | 3–5 min demo video | **MISSING** | No video artifact/link. Depends on #2 (a working demo). |
+| 4 | BrainLift verdict (did data→behavior hold) | **DONE** | `docs/brainlift.md` → *Empirical verdict [v3]* resolves SPOV-7 with the gpt551 numbers. |
+| 5 | 3–5 min demo video | **READY TO RECORD** | Depends only on running `python -m src.demo` (Step 1 of the runbook). |
 
 ---
 

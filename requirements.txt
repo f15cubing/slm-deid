@@ -27,6 +27,9 @@ pandas>=2.2
 scikit-learn>=1.5
 rich>=13.7
 
+# Publishing (model + dataset to the HuggingFace Hub — scripts/push_*.py)
+huggingface_hub>=0.24
+
 # Dev / test
 pytest>=8.2
 ruff>=0.6
