@@ -4,6 +4,10 @@ _Companion to [`completion-checklist.md`](completion-checklist.md). Everything c
 done and green (202 passed); this is the copy-paste sequence to turn the finished artifacts into the
 submission package. Steps 1–3 need the Colab GPU + the Drive adapter; Step 4 is already committed._
 
+> **Prefer a ready-made notebook?** Open [`notebooks/submission_publish.ipynb`](../notebooks/submission_publish.ipynb)
+> in Colab (GPU runtime), edit the three paths in cell 0, and run top to bottom. The cells below are
+> the same sequence in copy-paste form.
+
 **Prereqs:** the `sft-v3-gpt551` adapter + v3 splits on Drive (from the canonical run), a HuggingFace
 account + write token, and a screen recorder for the video.
 
