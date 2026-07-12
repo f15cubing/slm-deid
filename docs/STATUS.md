@@ -22,6 +22,25 @@ rows are the genuine 4-bit/API session. The 4-bit re-run is CUDA-only (command i
 
 _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
+## In flight
+- **[DPO] Stretch rung 1 — RAN on Colab; honest NULL result (DPO did not beat SFT). Draft PR, high-risk lane.**
+  The one planned-but-unbuilt feature (Day-5 stretch), now executed. Code: `src/train/prefs.py` (hybrid
+  preference-pair builder — Stage-A on-policy negatives from the SFT model's genuine errors + Stage-B
+  deterministic gold-span perturbations), `src/train/dpo.py` (TRL `DPOTrainer` on the gpt551 SFT adapter;
+  ref = adapter-disabled base), frozen `configs/dpo.yaml` (β=0.1, DPO-lr 5e-6, 1 epoch — **new knobs**, SFT
+  `configs/train.yaml` untouched), `notebooks/dpo_colab.ipynb`. 19 CPU tests; ruff clean.
+  - **Colab run (T4, 4-bit, eff. batch 16, seq 1024, 50 steps):** 790 pairs (112 on-policy + 678 backfill,
+    `eval_leak = 0`). base / sft-gpt551 / dpo scored on the same runtime; SFT column reproduces published
+    gpt551 (hardcases pass 0.824, over_tag 0.157) → clean comparison.
+  - **Result — DPO did NOT beat SFT (reported honestly, per the falsifiable-bet ethos):** hardcases
+    **byte-identical** SFT vs DPO in all 8 categories (pass 0.824=0.824, f5 0.847=0.847, over_tag
+    0.157=0.157, consistency 0.56=0.56); ood_probe identical; **mild regression** on adversarial (f5
+    0.743→0.669, recall 0.74→0.67) and heldout_names (f5 0.989→0.963, consistency 0.946→0.919). No axis
+    improved. Leading cause: **ref = base (not SFT)**, so the KL term pulls back toward the base's worse
+    behavior; the update was also tiny (1 epoch/lr 5e-6). **Principled follow-up = SFT reference** (a
+    methodological fix, not β/lr tuning — the Day-4 ceiling forbids papering over this with knobs).
+    Numbers: `docs/results.md` → DPO; `docs/model-card-dpo.md` → Results. Adapter + pairs on Drive.
+
 ## Done
 - **[gpt551] Canonical live-teacher 4-bit QLoRA run — DONE.** Live OpenAI-compatible teacher (TrueFoundry
   gateway) + independent verifier generated v3 data (818 train / 90 val; drops: 134 verifier-disagreement,

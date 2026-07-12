@@ -1,0 +1,38 @@
+# DPO config — Day-5 stretch rung 1 (preference optimization on top of the SFT adapter).
+# Used by notebooks/dpo_colab.ipynb via src.train.dpo. Colab/CUDA (4-bit QLoRA-DPO via unsloth);
+# the Mac/MPS counterpart just swaps base_model + backend (auto-detected).
+#
+# THESE ARE NEW KNOBS, not the frozen SFT config. The Day-4 ceiling ("don't touch hyperparameters
+# to paper over a data problem") protects configs/train.yaml, which is UNCHANGED. beta / the DPO
+# learning_rate / epochs have no prior value to freeze; they are set to conservative DPO defaults
+# and must not be tuned to mask a preference-data problem — fix the pairs instead (src/train/prefs.py).
+#
+# REFERENCE MODEL: ref_model is left implicit (ref_model=None + a PEFT policy), so TRL uses the
+# adapter-DISABLED base as the reference. DPO therefore regularizes toward the BASE model, not
+# toward SFT — the standard, memory-cheap QLoRA-DPO choice. A separate SFT reference (more correct,
+# ~2x memory) is a follow-up, not this run.
+
+# Policy init: the SFT LoRA to start DPO from. On Colab this is the gpt551 adapter mounted from
+# Drive (MyDrive/slm-deid-v3/...); override to a local adapter dir for an MPS smoke.
+sft_adapter: outputs/sft-gpt551
+base_model: unsloth/Qwen3-1.7B-unsloth-bnb-4bit   # hf/MPS smoke: Qwen/Qwen3-1.7B
+max_seq_len: 2048
+max_prompt_len: 1024
+
+# DPO objective
+beta: 0.1                    # KL strength vs the reference; 0.1 is the TRL default sweet spot
+
+# Optimization (DPO wants a LOWER lr than SFT's 2e-4 — it fine-tunes an already-good policy)
+learning_rate: 5.0e-6
+num_train_epochs: 1
+per_device_train_batch_size: 4    # DPO forwards chosen+rejected → ~2x SFT memory; smaller batch
+gradient_accumulation_steps: 4
+warmup_ratio: 0.05
+lr_scheduler_type: linear
+weight_decay: 0.01
+seed: 0
+
+# Data: the hybrid preference pairs written by the notebook (src.train.prefs.dump_pairs → JSONL).
+pairs_path: data/dpo/pairs.jsonl
+
+output_dir: outputs/dpo-v3   # override per run with --output-dir
