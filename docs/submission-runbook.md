@@ -22,8 +22,8 @@ account + write token, and a screen recorder for the video.
 from google.colab import drive; drive.mount('/content/drive')
 
 # Point these at your Drive copy of the canonical run:
-ADAPTER = "/content/drive/MyDrive/slm-deid-v3/sft-v3-gpt551"   # LoRA adapter dir
-SPLITS  = "/content/drive/MyDrive/slm-deid-v3/splits"          # train.jsonl + val.jsonl
+ADAPTER = "/content/drive/MyDrive/slm-deid-gpt551/sft-v3"      # canonical gpt551 LoRA adapter dir
+SPLITS  = "/content/drive/MyDrive/slm-deid-gpt551/splits"      # train.jsonl + val.jsonl
 REPO_ID = "YOURNAME/slm-deid-name-judgment"                    # your Hub id
 ```
 
@@ -42,7 +42,9 @@ the tune holds, then cut to the base-vs-tuned numbers (below / `docs/final-repor
 ## 2. Push the model + card to the Hub (checklist #2)
 
 ```python
-!huggingface-cli login   # paste a write token
+# Log in — paste a WRITE token (huggingface.co/settings/tokens) into the box.
+# (huggingface-cli is deprecated; this stores the token for the push scripts.)
+from huggingface_hub import login; login()
 # Dry-run first — verifies the eval-leakage guard passes, uploads nothing:
 !python scripts/push_to_hub.py --adapter "$ADAPTER" --repo-id "$REPO_ID" --dry-run
 # Real push:
