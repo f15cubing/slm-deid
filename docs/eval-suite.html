@@ -74,6 +74,37 @@
   .foot { color: var(--faint); font-size: 12px; margin-top: 10px; }
   .toggle { margin-left: auto; }
   .legend { color: var(--faint); font-size: 12px; margin: 4px 0 0; }
+  /* base-vs-tuned real-output comparison */
+  .cmp-agg { border-collapse: collapse; width: 100%; max-width: 640px; font-size: 14px; margin: 4px 0 8px; }
+  .cmp-agg th, .cmp-agg td { padding: 7px 12px; border-bottom: 1px solid var(--line); text-align: right; }
+  .cmp-agg th:first-child, .cmp-agg td:first-child { text-align: left; color: var(--muted); }
+  .cmp-agg thead th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  .cmp-agg .b { color: var(--bad); font-variant-numeric: tabular-nums; }
+  .cmp-agg .t { color: var(--good); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cmp-agg td small { color: var(--faint); font-weight: 400; }
+  .cmp { display: grid; gap: 12px; }
+  .cmp-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .cmp-card.failtune { border-color: var(--warn); }
+  .cmp-head { padding: 11px 15px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .cmp-head .intended { color: var(--muted); font-size: 13px; }
+  .cmp-head .intended b { color: var(--ink); }
+  .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 680px) { .cmp-grid { grid-template-columns: 1fr; } }
+  .cmp-col { padding: 13px 15px; }
+  .cmp-col.base { border-right: 1px solid var(--line); }
+  @media (max-width: 680px) { .cmp-col.base { border-right: none; border-bottom: 1px solid var(--line); } }
+  .cmp-lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+             margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+  .cmp-out { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px;
+             line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .mk { background: var(--tag-bg); color: var(--tag-line); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .badge.pass { color: var(--good); background: rgba(74,222,128,.14); }
+  .badge.fail { color: var(--bad); background: rgba(248,113,113,.14); }
+  .flags { margin-top: 9px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .flag { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: rgba(248,113,113,.14); color: var(--bad); }
+  .flag.ok { background: rgba(74,222,128,.14); color: var(--good); }
+  .cmp-why { font-size: 12.5px; color: var(--muted); padding: 10px 15px; border-top: 1px solid var(--line); background: var(--panel2); }
 </style>
 </head>
 <body>
@@ -92,6 +123,14 @@
   <p class="legend">Fully-correct passages. Fine-tunes (authored, gpt551) vs. the prompted base and the
     frontier ceiling (gpt-4.1). Greener = higher. Source: <code>docs/final-report.md</code> &sect;3.1.</p>
   <table id="matrix"></table>
+
+  <h2>Base vs fine-tuned &mdash; real model outputs</h2>
+  <p class="legend">What the numbers look like on the page. Every string below is a <b>real generated
+    output</b> copied verbatim from the eval report pair <code id="cmp-src"></code> &mdash; not gold
+    targets, not hand-edited. The tune tags the right span and changes nothing else; the base leaks,
+    over-tags, and breaks byte-integrity. One honest tuned failure is kept in (per <code>CLAUDE.md</code>).</p>
+  <table class="cmp-agg" id="cmp-agg"></table>
+  <div class="cmp" id="cmp"></div>
 
   <h2>Browse a set</h2>
   <div class="tabs" id="tabs"></div>
@@ -258,6 +297,96 @@ function render(){
 }
 document.getElementById('search').addEventListener('input', renderCases);
 document.getElementById('rawtoggle').addEventListener('change', renderCases);
+
+// --- base-vs-tuned real outputs (from outputs/eval_reports_colab_run2) ---
+const COMPARE = {
+  src: 'outputs/eval_reports_colab_run2 · base vs tuned-v3 (4-bit QLoRA, Colab T4)',
+  agg: [
+    ['pass rate (fully correct)',            0.35, 0.88, 'up'],
+    ['F5 (recall-weighted)',                 0.51, 0.92, 'up'],
+    ['leakage rate',    0.25, 0.04, 'down', 'name left untagged'],
+    ['over-tag rate',   0.55, 0.10, 'down', 'non-name tagged'],
+    ['integrity violations', 0.59, 0.00, 'down', 'text altered beyond tags'],
+    ['consistency across paraphrases',       0.38, 0.88, 'up'],
+  ],
+  cases: [
+    { cat:'person_vs_eponym', intended:'<b>tag</b> — "Newton" is the person here',
+      base:{ out:'⟨NAME⟩Newton ⟨NAME⟩ stayed late in the lab because the experiment kept failing.', pass:false, flags:['leaked','integrity broken'] },
+      tuned:{ out:'⟨NAME⟩Newton⟨/NAME⟩ stayed late in the lab because the experiment kept failing.', pass:true, flags:[] },
+      why:'Base emits a malformed open/open tag pair — the name is effectively leaked and the byte stream is corrupted. The tune produces a well-formed span.' },
+    { cat:'person_vs_eponym', intended:"<b>don't tag</b> — \"Newton method\" is a technique, not a person",
+      base:{ out:'⟨NAME⟩We⟨/NAME⟩ applied the Newton method to approximate the root of the equation.', pass:false, flags:['over-tagged'] },
+      tuned:{ out:'We applied the Newton method to approximate the root of the equation.', pass:true, flags:[] },
+      why:'Base tags the wrong token entirely ("We") and leaves the eponym. The tune correctly tags nothing.' },
+    { cat:'person_vs_place', intended:'<b>tag</b> — "Chelsea" is a person being thanked',
+      base:{ out:'⟨NAME⟩Chelsea⟨/NAME⟩', pass:false, flags:['leaked','integrity broken'] },
+      tuned:{ out:'thanks to ⟨NAME⟩Chelsea⟨/NAME⟩ I finally understood the proof', pass:true, flags:[] },
+      why:'Base collapses the whole passage down to just the tagged word, destroying the surrounding text. The tune tags in place and preserves every other byte.' },
+    { cat:'person_vs_place', intended:"<b>don't tag</b> — \"Chelsea\" is a neighbourhood here",
+      base:{ out:'⟨NAME⟩Chelsea⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'Last summer I visited Chelsea and walked along the river all afternoon.', pass:true, flags:[] },
+      why:'Same surface word, opposite correct call. Base tags it (and again eats the passage); the tune reads it as a place and leaves it alone.' },
+    { cat:'person_vs_common', intended:"<b>don't tag</b> — \"rose\" is a flower",
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'The rose in the courtyard bloomed early this year.', pass:true, flags:[] },
+      why:'Base degenerates into an empty tagged placeholder. The tune recognises "rose" as a common noun and returns the passage untouched.' },
+    { cat:'first_name_only', intended:'<b>tag</b> — "Sam" is a first-name-only address',
+      base:{ out:'⟨NAME⟩Sam⟨/NAME⟩ — that explanation finally clicked', pass:false, flags:['integrity broken'] },
+      tuned:{ out:'thanks, ⟨NAME⟩Sam⟨/NAME⟩ — that explanation finally clicked', pass:true, flags:[] },
+      why:'Base tags "Sam" correctly but drops the leading "thanks," — an integrity violation. The tune tags the name and keeps the sentence intact.' },
+    { cat:'negative_trap', intended:"<b>don't tag</b> — \"Android\" is a brand, not a person",
+      base:{ out:'<i>wrote</i> the whole draft on my Android phone during the bus ride', pass:false, flags:['integrity broken'] },
+      tuned:{ out:'i wrote the whole draft on my Android phone during the bus ride', pass:true, flags:[] },
+      why:'Base hallucinates stray HTML markup and mangles the opening — a hard integrity failure. The tune returns the passage byte-for-byte.' },
+    { cat:'negative_trap', intended:"<b>don't tag</b> — \"March\"/\"April\" are months. <b>Honest failure: the tune gets this wrong.</b>",
+      failtune:true,
+      base:{ out:'March felt endless, but April brought the final presentations.', pass:true, flags:[] },
+      tuned:{ out:'⟨NAME⟩March⟨/NAME⟩ felt endless, but ⟨NAME⟩April⟨/NAME⟩ brought the final presentations.', pass:false, flags:['over-tagged'] },
+      why:'The one shown case where the base wins: months that double as given names fool the tune into over-tagging — its main residual error mode. Left in deliberately.' },
+  ],
+};
+
+// render marker tokens as visible chips (robust to malformed / unbalanced tags)
+function renderMarks(t){
+  return esc(t)
+    .replaceAll('⟨NAME⟩', '<span class="mk">⟨NAME⟩</span>')
+    .replaceAll('⟨/NAME⟩', '<span class="mk">⟨/NAME⟩</span>');
+}
+(function(){
+  document.getElementById('cmp-src').textContent = COMPARE.src;
+  const at = document.getElementById('cmp-agg');
+  let h = '<thead><tr><th>metric &mdash; 51 hard cases</th><th>base</th><th>fine-tuned</th></tr></thead><tbody>';
+  COMPARE.agg.forEach(([label, b, tv, dir, hint])=>{
+    const arrow = dir==='down' ? ' <small>&darr; lower better</small>' : '';
+    h += `<tr><td>${esc(label)}${hint?` <small>(${esc(hint)})</small>`:''}${arrow}</td>`
+       + `<td class="b">${b.toFixed(2)}</td><td class="t">${tv.toFixed(2)}</td></tr>`;
+  });
+  h += '</tbody>';
+  at.innerHTML = h;
+
+  const col = (label, side)=>{
+    const badge = side.pass ? '<span class="badge pass">PASS</span>' : '<span class="badge fail">FAIL</span>';
+    const flags = side.flags.length
+      ? side.flags.map(f=>`<span class="flag">${esc(f)}</span>`).join('')
+      : '<span class="flag ok">clean</span>';
+    return `<div class="cmp-lab">${label} ${badge}</div>`
+         + `<div class="cmp-out">${renderMarks(side.out)}</div>`
+         + `<div class="flags">${flags}</div>`;
+  };
+  document.getElementById('cmp').innerHTML = COMPARE.cases.map(c=>
+    `<div class="cmp-card${c.failtune?' failtune':''}">
+      <div class="cmp-head">
+        <span class="cat cat-${esc(c.cat)}">&#9679; ${esc(c.cat)}</span>
+        <span class="intended">Intended: ${c.intended}</span>
+      </div>
+      <div class="cmp-grid">
+        <div class="cmp-col base">${col('base', c.base)}</div>
+        <div class="cmp-col">${col('fine-tuned', c.tuned)}</div>
+      </div>
+      <div class="cmp-why">${esc(c.why)}</div>
+    </div>`).join('');
+})();
+
 render();
 </script>
 </body>
