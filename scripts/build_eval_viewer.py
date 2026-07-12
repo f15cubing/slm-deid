@@ -20,9 +20,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+
+# Import the REAL system prompt so the viewer never drifts from what inference/eval use.
+# (src.common.prompts pulls in only src.common.tags → re/dataclasses; no torch, safe at build.)
+sys.path.insert(0, str(REPO))
+from src.common.prompts import SYSTEM_PROMPT  # noqa: E402
 
 # --- the five quarantined eval sets -------------------------------------------
 # (key, jsonl path relative to repo root, human blurb from final-report.md 2.4)
@@ -169,6 +175,7 @@ def build_payload() -> dict:
         "metrics": [{"key": k, "dir": d, "desc": t} for k, d, t in METRICS],
         "results": RESULTS,
         "footnotes": FOOTNOTES,
+        "prompt": {"system": SYSTEM_PROMPT},
     }
 
 
@@ -279,6 +286,18 @@ HTML_TEMPLATE = r"""<!doctype html>
   .flag { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: rgba(248,113,113,.14); color: var(--bad); }
   .flag.ok { background: rgba(74,222,128,.14); color: var(--good); }
   .cmp-why { font-size: 12.5px; color: var(--muted); padding: 10px 15px; border-top: 1px solid var(--line); background: var(--panel2); }
+  /* prompt panel */
+  .prompt { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); margin: 4px 0 16px; }
+  .prompt > summary { cursor: pointer; padding: 11px 15px; color: var(--ink); font-size: 13px; font-weight: 600; list-style: none; }
+  .prompt > summary::-webkit-details-marker { display: none; }
+  .prompt > summary::before { content: "\25B8"; color: var(--faint); margin-right: 8px; display: inline-block; transition: transform .15s; }
+  .prompt[open] > summary::before { transform: rotate(90deg); }
+  .prompt .pbody { padding: 0 15px 14px; }
+  .prompt .role { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin: 6px 0 4px; }
+  .promptpre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.6;
+               white-space: pre-wrap; word-break: break-word; background: var(--bg); border: 1px solid var(--line);
+               border-radius: 8px; padding: 11px 13px; margin: 0 0 6px; color: var(--ink); }
+  .promptpre .nm { background: var(--tag-bg); color: var(--tag-line); border: none; border-radius: 4px; padding: 0 3px; }
 </style>
 </head>
 <body>
@@ -303,6 +322,19 @@ HTML_TEMPLATE = r"""<!doctype html>
     output</b> copied verbatim from the eval report pair <code id="cmp-src"></code> &mdash; not gold
     targets, not hand-edited. The tune tags the right span and changes nothing else; the base leaks,
     over-tags, and breaks byte-integrity. One honest tuned failure is kept in (per <code>CLAUDE.md</code>).</p>
+  <details class="prompt" id="promptbox" open>
+    <summary>The prompt &mdash; identical for both models (only the weights differ)</summary>
+    <div class="pbody">
+      <p class="legend" style="margin:0 0 10px">Both the prompted base and the fine-tune are called the exact same
+        way (<code>src/infer.py</code> &rarr; <code>build_messages</code>, the same form training used): a fixed
+        <b>system</b> message + a <b>user</b> turn that is the raw passage, byte-for-byte. Nothing else changes between
+        the two runs &mdash; so every difference above is the fine-tune, not the prompt.</p>
+      <div class="role">system</div>
+      <pre class="promptpre" id="promptsys"></pre>
+      <div class="role">user</div>
+      <pre class="promptpre">&laquo; the passage, verbatim &raquo;   e.g.  Newton stayed late in the lab because the experiment kept failing.</pre>
+    </div>
+  </details>
   <table class="cmp-agg" id="cmp-agg"></table>
   <div class="cmp" id="cmp"></div>
 
@@ -488,32 +520,71 @@ const COMPARE = {
       base:{ out:'⟨NAME⟩Newton ⟨NAME⟩ stayed late in the lab because the experiment kept failing.', pass:false, flags:['leaked','integrity broken'] },
       tuned:{ out:'⟨NAME⟩Newton⟨/NAME⟩ stayed late in the lab because the experiment kept failing.', pass:true, flags:[] },
       why:'Base emits a malformed open/open tag pair — the name is effectively leaked and the byte stream is corrupted. The tune produces a well-formed span.' },
-    { cat:'person_vs_eponym', intended:"<b>don't tag</b> — \"Newton method\" is a technique, not a person",
+    { cat:'person_vs_eponym', intended:'<b>don\'t tag</b> — "Newton method" is a technique, not a person',
       base:{ out:'⟨NAME⟩We⟨/NAME⟩ applied the Newton method to approximate the root of the equation.', pass:false, flags:['over-tagged'] },
       tuned:{ out:'We applied the Newton method to approximate the root of the equation.', pass:true, flags:[] },
       why:'Base tags the wrong token entirely ("We") and leaves the eponym. The tune correctly tags nothing.' },
+    { cat:'possessive', intended:'<b>don\'t tag</b> — "Newton\'s laws" is an eponymous law, not the person',
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'Newton\'s laws describe the motion of classical objects.', pass:true, flags:[] },
+      why:'The possessive of an eponym is still not a person mention. Base collapses to an empty placeholder; the tune leaves the sentence alone.' },
+    { cat:'person_vs_eponym', intended:'<b>don\'t tag</b> — "gauss" is a unit of measurement',
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'The magnetic field strength was measured in gauss during the experiment.', pass:true, flags:[] },
+      why:'A unit named after a scientist is not a person. Base emits a garbage placeholder that destroys the text; the tune keeps it byte-identical.' },
     { cat:'person_vs_place', intended:'<b>tag</b> — "Chelsea" is a person being thanked',
-      base:{ out:'⟨NAME⟩Chelsea⟨/NAME⟩', pass:false, flags:['leaked','integrity broken'] },
+      base:{ out:'⟨NAME⟩Chelsea⟨/NAME⟩', pass:false, flags:['leaked','over-tagged','integrity broken'] },
       tuned:{ out:'thanks to ⟨NAME⟩Chelsea⟨/NAME⟩ I finally understood the proof', pass:true, flags:[] },
       why:'Base collapses the whole passage down to just the tagged word, destroying the surrounding text. The tune tags in place and preserves every other byte.' },
-    { cat:'person_vs_place', intended:"<b>don't tag</b> — \"Chelsea\" is a neighbourhood here",
+    { cat:'person_vs_place', intended:'<b>don\'t tag</b> — "Chelsea" is a neighbourhood here',
       base:{ out:'⟨NAME⟩Chelsea⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
       tuned:{ out:'Last summer I visited Chelsea and walked along the river all afternoon.', pass:true, flags:[] },
       why:'Same surface word, opposite correct call. Base tags it (and again eats the passage); the tune reads it as a place and leaves it alone.' },
-    { cat:'person_vs_common', intended:"<b>don't tag</b> — \"rose\" is a flower",
+    { cat:'person_vs_place', intended:'<b>don\'t tag</b> — "Florence" is the city',
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'The Renaissance art in Florence left a deep impression on the class.', pass:true, flags:[] },
+      why:'"Renaissance art in Florence" is unmistakably the city. Base wrecks the passage; the tune reads the context and leaves it.' },
+    { cat:'person_vs_common', intended:'<b>tag</b> — "Bishop" is the TA’s name',
+      base:{ out:'⟨NAME⟩Bishop⟨/NAME⟩', pass:false, flags:['leaked','over-tagged','integrity broken'] },
+      tuned:{ out:'our TA ⟨NAME⟩Bishop⟨/NAME⟩ regraded my problem set', pass:true, flags:[] },
+      why:'"our TA Bishop" makes Bishop a person. Base tags the right word but eats the rest of the sentence; the tune tags in place.' },
+    { cat:'person_vs_common', intended:'<b>don\'t tag</b> — "bishop" is the chess piece (same word as the card above)',
+      base:{ out:'⟨NAME⟩Bishop⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'I moved my bishop to threaten the queen in the endgame.', pass:true, flags:[] },
+      why:'The mirror image of the previous card: identical surface word, opposite call. "moved my bishop … endgame" is chess — the tune tags nothing.' },
+    { cat:'person_vs_common', intended:'<b>tag</b> — "Baker" is a professor’s surname',
+      base:{ out:'⟨NAME⟩Professor Baker⟨/NAME⟩ extended the deadline for the whole class.', pass:false, flags:['leaked','over-tagged'] },
+      tuned:{ out:'Professor ⟨NAME⟩Baker⟨/NAME⟩ extended the deadline for the whole class.', pass:true, flags:[] },
+      why:'Base pulls the title into the span ("Professor Baker") — an over-tag that also misses the exact gold name. The tune tags just "Baker".' },
+    { cat:'person_vs_common', intended:'<b>don\'t tag</b> — "baker" is an occupation here (same word as above)',
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
+      tuned:{ out:'The baker down the street sponsored our fundraising bake sale.', pass:true, flags:[] },
+      why:'Lower-case "the baker down the street" is a job, not a name. The tune leaves it; base emits a placeholder.' },
+    { cat:'person_vs_common', intended:'<b>don\'t tag</b> — "rose" is a flower',
       base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['over-tagged','integrity broken'] },
       tuned:{ out:'The rose in the courtyard bloomed early this year.', pass:true, flags:[] },
       why:'Base degenerates into an empty tagged placeholder. The tune recognises "rose" as a common noun and returns the passage untouched.' },
     { cat:'first_name_only', intended:'<b>tag</b> — "Sam" is a first-name-only address',
-      base:{ out:'⟨NAME⟩Sam⟨/NAME⟩ — that explanation finally clicked', pass:false, flags:['integrity broken'] },
+      base:{ out:'⟨NAME⟩Sam⟨/NAME⟩ — that explanation finally clicked', pass:false, flags:['leaked','over-tagged','integrity broken'] },
       tuned:{ out:'thanks, ⟨NAME⟩Sam⟨/NAME⟩ — that explanation finally clicked', pass:true, flags:[] },
       why:'Base tags "Sam" correctly but drops the leading "thanks," — an integrity violation. The tune tags the name and keeps the sentence intact.' },
-    { cat:'negative_trap', intended:"<b>don't tag</b> — \"Android\" is a brand, not a person",
+    { cat:'first_name_only', intended:'<b>tag</b> — "Alvarez" is a name buried mid-sentence',
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['leaked','over-tagged','integrity broken'] },
+      tuned:{ out:'When ⟨NAME⟩Alvarez⟨/NAME⟩ presented, the room finally went quiet.', pass:true, flags:[] },
+      why:'Base garbles into a placeholder, leaking the name and wrecking the text. The tune finds the name after "When" and tags only it.' },
+    { cat:'third_party', intended:'<b>tag</b> — "Priya" is a named third person',
+      base:{ out:'⟨NAME⟩...⟨/NAME⟩', pass:false, flags:['leaked','over-tagged','integrity broken'] },
+      tuned:{ out:'My mom, ⟨NAME⟩Priya⟨/NAME⟩, quizzed me on vocabulary every evening.', pass:true, flags:[] },
+      why:'A parent named in passing. Base produces a placeholder; the tune tags "Priya" and preserves the commas and the rest.' },
+    { cat:'easy', intended:'<b>tag</b> — a full name in a sign-off',
+      base:{ out:'⟨NAME⟩Maria Gonzalez⟨/NAME⟩', pass:false, flags:['leaked','over-tagged','integrity broken'] },
+      tuned:{ out:'Sincerely, ⟨NAME⟩Maria Gonzalez⟨/NAME⟩', pass:true, flags:[] },
+      why:'Even an easy full-name sign-off trips the base: it tags the name but drops "Sincerely," (integrity break). The tune keeps the whole line.' },
+    { cat:'negative_trap', intended:'<b>don\'t tag</b> — "Android" is a brand, not a person',
       base:{ out:'<i>wrote</i> the whole draft on my Android phone during the bus ride', pass:false, flags:['integrity broken'] },
       tuned:{ out:'i wrote the whole draft on my Android phone during the bus ride', pass:true, flags:[] },
       why:'Base hallucinates stray HTML markup and mangles the opening — a hard integrity failure. The tune returns the passage byte-for-byte.' },
-    { cat:'negative_trap', intended:"<b>don't tag</b> — \"March\"/\"April\" are months. <b>Honest failure: the tune gets this wrong.</b>",
-      failtune:true,
+    { cat:'negative_trap', intended:'<b>don\'t tag</b> — "March"/"April" are months. <b>Honest failure: the tune gets this wrong.</b>', failtune:true,
       base:{ out:'March felt endless, but April brought the final presentations.', pass:true, flags:[] },
       tuned:{ out:'⟨NAME⟩March⟨/NAME⟩ felt endless, but ⟨NAME⟩April⟨/NAME⟩ brought the final presentations.', pass:false, flags:['over-tagged'] },
       why:'The one shown case where the base wins: months that double as given names fool the tune into over-tagging — its main residual error mode. Left in deliberately.' },
@@ -527,6 +598,7 @@ function renderMarks(t){
     .replaceAll('⟨/NAME⟩', '<span class="mk">⟨/NAME⟩</span>');
 }
 (function(){
+  document.getElementById('promptsys').innerHTML = renderTagged(DATA.prompt.system);
   document.getElementById('cmp-src').textContent = COMPARE.src;
   const at = document.getElementById('cmp-agg');
   let h = '<thead><tr><th>metric &mdash; 51 hard cases</th><th>base</th><th>fine-tuned</th></tr></thead><tbody>';
