@@ -1,3 +1,26 @@
+---
+license: apache-2.0
+language:
+  - en
+task_categories:
+  - token-classification
+tags:
+  - de-identification
+  - pii
+  - named-entity-recognition
+  - privacy
+  - education
+size_categories:
+  - n<1K
+configs:
+  - config_name: default
+    data_files:
+      - split: train
+        path: data/train.jsonl
+      - split: validation
+        path: data/val.jsonl
+---
+
 # Dataset card — v3 (SFT training data)
 
 _The data `sft-v3-mps` trained on. Built 2026-07-08 to fix v2's recall/consistency regression by
