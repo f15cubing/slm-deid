@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<!--
+  Base-vs-tuned comparison — self-contained, no build step, no server.
+  Open directly in a browser (double-click, or `open docs/compare.html`).
+
+  PROVENANCE (honest): every base/tuned string below is a REAL eval output copied
+  verbatim from the committed-run report pair
+    outputs/eval_reports_colab_run2/base-20260709-225903.json
+    outputs/eval_reports_colab_run2/tuned-v3-20260709-230012.json
+  (4-bit QLoRA on v3 data, Colab T4). Nothing here is hand-authored or idealised.
+  These reports are gitignored, so the examples are hardcoded into this file.
+
+  The canonical A100 live-teacher run (gpt551) lands close on aggregate
+  (pass 0.35->0.82 vs the 0.35->0.88 shown here) — full numbers in docs/results.md.
+  The tuned model is NOT perfect: the last card (months) is a genuine over-tag
+  failure, left in on purpose. See CLAUDE.md "report honestly (win or lose)".
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>De-Id name judgment — base vs fine-tuned</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --ink:#e6e9ef; --muted:#9aa3b2; --tag:#ffd479; --tagbg:#4a3a12;
+    --good:#5ad19a; --goodbg:#123024; --bad:#ff8080; --badbg:#3a1414;
+    --accent:#7aa2ff;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f6f7f9; --panel:#ffffff; --panel2:#f0f2f5; --line:#e2e5ea;
+      --ink:#1a1d24; --muted:#5b6472; --tag:#8a5a00; --tagbg:#fff2cf;
+      --good:#0d7a4f; --goodbg:#e2f6ec; --bad:#b42318; --badbg:#fdeceb;
+      --accent:#3355cc;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:32px 20px 64px;
+  }
+  .wrap{max-width:980px; margin:0 auto}
+  h1{font-size:26px; margin:0 0 4px; letter-spacing:-.01em}
+  .sub{color:var(--muted); margin:0 0 24px; font-size:14px}
+  .sub code{background:var(--panel2); padding:1px 5px; border-radius:4px}
+  a{color:var(--accent)}
+
+  .metrics{
+    display:grid; grid-template-columns:1fr; gap:0;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    overflow:hidden; margin-bottom:14px;
+  }
+  table{border-collapse:collapse; width:100%; font-size:14px}
+  th,td{padding:9px 14px; text-align:left; border-bottom:1px solid var(--line)}
+  th{color:var(--muted); font-weight:600; background:var(--panel2)}
+  td.metric{color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  .num{font-variant-numeric:tabular-nums; text-align:right}
+  .base-col{color:var(--bad)}
+  .tuned-col{color:var(--good); font-weight:600}
+  .delta{color:var(--muted); font-size:12px}
+
+  .note{color:var(--muted); font-size:12.5px; margin:0 0 30px}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    margin:0 0 18px; overflow:hidden;
+  }
+  .card.fail-tuned{border-color:#7a4a12}
+  .card-head{
+    padding:12px 16px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  }
+  .cat{
+    font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--accent); background:var(--panel2); padding:2px 8px; border-radius:20px;
+  }
+  .intended{color:var(--muted); font-size:13px}
+  .intended b{color:var(--ink)}
+  .grid{display:grid; grid-template-columns:1fr 1fr}
+  @media (max-width:680px){ .grid{grid-template-columns:1fr} }
+  .col{padding:14px 16px}
+  .col.base{border-right:1px solid var(--line)}
+  @media (max-width:680px){ .col.base{border-right:none; border-bottom:1px solid var(--line)} }
+  .col-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--muted); margin-bottom:8px; display:flex; gap:8px; align-items:center;
+  }
+  .passage{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word;
+  }
+  .tag{background:var(--tagbg); color:var(--tag); border-radius:4px; padding:0 3px; font-weight:600}
+  .mark{color:var(--muted)}
+  .badge{font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px}
+  .badge.pass{color:var(--good); background:var(--goodbg)}
+  .badge.fail{color:var(--bad); background:var(--badbg)}
+  .flags{margin-top:9px; display:flex; gap:6px; flex-wrap:wrap}
+  .flag{font-size:11px; padding:1px 7px; border-radius:20px; background:var(--badbg); color:var(--bad)}
+  .flag.ok{background:var(--goodbg); color:var(--good)}
+  .why{font-size:12.5px; color:var(--muted); padding:11px 16px; border-top:1px solid var(--line); background:var(--panel2)}
+  footer{color:var(--muted); font-size:12.5px; margin-top:36px; border-top:1px solid var(--line); padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Context-sensitive name judgment: base vs fine-tuned</h1>
+  <p class="sub">
+    Same passages, two models. <b>Prompted base</b> Qwen3-1.7B vs the <b>fine-tuned</b> QLoRA
+    (<code>sft-v3</code>). Task: wrap real personal names in <code>&#10216;NAME&#10217;…&#10216;/NAME&#10217;</code>
+    and change <b>nothing else</b>. Every output below is a real eval string, copied verbatim.
+  </p>
+
+  <!-- Real aggregates from the same run2 report pair the examples are drawn from -->
+  <div class="metrics">
+    <table>
+      <thead>
+        <tr><th>metric — 51 hard cases</th><th class="num">base</th><th class="num">fine-tuned</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="metric">pass rate (fully correct)</td><td class="num base-col">0.35</td><td class="num tuned-col">0.88</td></tr>
+        <tr><td class="metric">F5 (recall-weighted)</td><td class="num base-col">0.51</td><td class="num tuned-col">0.92</td></tr>
+        <tr><td class="metric">leakage rate <span class="delta">(name left untagged — lower better)</span></td><td class="num base-col">0.25</td><td class="num tuned-col">0.04</td></tr>
+        <tr><td class="metric">over-tag rate <span class="delta">(non-name tagged — lower better)</span></td><td class="num base-col">0.55</td><td class="num tuned-col">0.10</td></tr>
+        <tr><td class="metric">integrity violations <span class="delta">(text altered beyond tags — lower better)</span></td><td class="num base-col">0.59</td><td class="num tuned-col">0.00</td></tr>
+        <tr><td class="metric">consistency across paraphrases</td><td class="num base-col">0.38</td><td class="num tuned-col">0.88</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">
+    Source: <code>outputs/eval_reports_colab_run2</code> (4-bit QLoRA, Colab T4). The canonical A100
+    live-teacher run (gpt551) lands close — pass 0.35&rarr;0.82 — full numbers and CIs in
+    <code>docs/results.md</code>. Numbers reported win-or-lose per <code>CLAUDE.md</code>.
+  </p>
+
+  <!-- ============ EXAMPLES ============ -->
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">person vs eponym</span>
+      <span class="intended">Intended: <b>tag</b> — "Newton" is the person here.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>Newton <span class="tag">&#10216;NAME&#10217;</span> stayed late in the lab because the experiment kept failing.</div>
+        <div class="flags"><span class="flag">leaked</span><span class="flag">integrity broken</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>Newton<span class="tag">&#10216;/NAME&#10217;</span> stayed late in the lab because the experiment kept failing.</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Base emits a malformed open/open tag pair — the name is effectively leaked and the byte stream is corrupted. The tune produces a well-formed span.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">person vs eponym</span>
+      <span class="intended">Intended: <b>don't tag</b> — "Newton method" is a technique, not a person.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>We<span class="tag">&#10216;/NAME&#10217;</span> applied the Newton method to approximate the root of the equation.</div>
+        <div class="flags"><span class="flag">over-tagged</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage">We applied the Newton method to approximate the root of the equation.</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Base tags the wrong token entirely ("We") and leaves the eponym. The tune correctly tags nothing — "Newton method" names a method, not a person.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">person vs place</span>
+      <span class="intended">Intended: <b>tag</b> — "Chelsea" is a person being thanked.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>Chelsea<span class="tag">&#10216;/NAME&#10217;</span></div>
+        <div class="flags"><span class="flag">leaked</span><span class="flag">integrity broken</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage">thanks to <span class="tag">&#10216;NAME&#10217;</span>Chelsea<span class="tag">&#10216;/NAME&#10217;</span> I finally understood the proof</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Base collapses the entire passage down to just the tagged word, destroying the surrounding text. The tune tags in place and preserves every other byte.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">person vs place</span>
+      <span class="intended">Intended: <b>don't tag</b> — "Chelsea" is a neighbourhood here.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>Chelsea<span class="tag">&#10216;/NAME&#10217;</span></div>
+        <div class="flags"><span class="flag">over-tagged</span><span class="flag">integrity broken</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage">Last summer I visited Chelsea and walked along the river all afternoon.</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Same surface word, opposite correct call. Base tags it (and again eats the passage); the tune reads "visited Chelsea … river" as a place and leaves it alone.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">person vs common word</span>
+      <span class="intended">Intended: <b>don't tag</b> — "rose" is a flower.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>...<span class="tag">&#10216;/NAME&#10217;</span></div>
+        <div class="flags"><span class="flag">over-tagged</span><span class="flag">integrity broken</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage">The rose in the courtyard bloomed early this year.</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Base degenerates into an empty tagged placeholder. The tune recognises "rose" as a common noun and returns the passage untouched.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">first name only</span>
+      <span class="intended">Intended: <b>tag</b> — "Sam" is a first-name-only address.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>Sam<span class="tag">&#10216;/NAME&#10217;</span> &mdash; that explanation finally clicked</div>
+        <div class="flags"><span class="flag">integrity broken</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage">thanks, <span class="tag">&#10216;NAME&#10217;</span>Sam<span class="tag">&#10216;/NAME&#10217;</span> &mdash; that explanation finally clicked</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Base tags "Sam" correctly but drops the leading "thanks," — an integrity violation. The tune tags the name <em>and</em> keeps the sentence intact.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="cat">negative trap</span>
+      <span class="intended">Intended: <b>don't tag</b> — "Android" is a brand, not a person.</span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge fail">FAIL</span></div>
+        <div class="passage">&lt;i&gt;wrote&lt;/i&gt; the whole draft on my Android phone during the bus ride</div>
+        <div class="flags"><span class="flag">integrity broken</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge pass">PASS</span></div>
+        <div class="passage">i wrote the whole draft on my Android phone during the bus ride</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+    </div>
+    <div class="why">Base hallucinates stray HTML markup and mangles the opening — a hard integrity failure. The tune returns the passage byte-for-byte.</div>
+  </div>
+
+  <div class="card fail-tuned">
+    <div class="card-head">
+      <span class="cat">negative trap</span>
+      <span class="intended">Intended: <b>don't tag</b> — "March"/"April" are months. <b>Honest failure: the tune gets this wrong.</b></span>
+    </div>
+    <div class="grid">
+      <div class="col base">
+        <div class="col-label">base <span class="badge pass">PASS</span></div>
+        <div class="passage">March felt endless, but April brought the final presentations.</div>
+        <div class="flags"><span class="flag ok">clean</span></div>
+      </div>
+      <div class="col">
+        <div class="col-label">fine-tuned <span class="badge fail">FAIL</span></div>
+        <div class="passage"><span class="tag">&#10216;NAME&#10217;</span>March<span class="tag">&#10216;/NAME&#10217;</span> felt endless, but <span class="tag">&#10216;NAME&#10217;</span>April<span class="tag">&#10216;/NAME&#10217;</span> brought the final presentations.</div>
+        <div class="flags"><span class="flag">over-tagged</span></div>
+      </div>
+    </div>
+    <div class="why">The one shown case where the base wins: months that double as given names ("April", "March") fool the tune into over-tagging. Left in deliberately — the model is strong, not perfect, and over-tagging remains its main residual error mode.</div>
+  </div>
+
+  <footer>
+    Tag markers <code>&#10216;NAME&#10217;…&#10216;/NAME&#10217;</code> highlighted for readability. Outputs verbatim from
+    <code>eval_reports_colab_run2</code> (base + <code>tuned-v3</code>). Full methodology, all 51 hard cases,
+    and the canonical A100 gpt551 run: <code>docs/results.md</code> and <code>docs/final-report.md</code>.
+  </footer>
+</div>
+</body>
+</html>
