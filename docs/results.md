@@ -29,6 +29,34 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
   ambiguous surfaces are disjoint from **both** the eval set and the training banks. Tuned holds:
   recall 0.05→0.89, pass 0.53→0.89, consistency 0.00→0.90, over-tag flat at 0.11 — mirrors the
   in-distribution numbers, so the judgment generalized rather than memorized vocabulary.
+- **[DPO stretch rung](#dpo-stretch-rung-on-gpt551--null-result) — null result (honest).** DPO on top of
+  the gpt551 SFT adapter (790 preference pairs, `eval_leak=0`) **did not beat SFT**: byte-identical on the
+  hard cases (all 8 categories) and ood, mild regression on adversarial/heldout. Leading cause: the DPO
+  reference is the *base* model, so the KL term pulls back toward base behavior. Full read + the
+  SFT-reference follow-up: [`docs/model-card-dpo.md`](model-card-dpo.md).
+
+---
+
+# DPO stretch rung (on gpt551) — null result
+
+Day-5 stretch rung 1 (preference optimization). Ran on Colab T4, 4-bit, eff. batch 16, seq 1024, 1
+epoch, β=0.1, lr 5e-6 → 790 hybrid preference pairs (112 on-policy + 678 deterministic backfill,
+`eval_leak=0`). base / sft-gpt551 / dpo scored on the same runtime; the SFT column reproduces the
+published gpt551 numbers (hardcases pass 0.824, over_tag 0.157). **DPO did not beat SFT on any axis.**
+
+| Eval set | n | SFT pass → DPO | SFT f5 → DPO | verdict |
+|---|---|---|---|---|
+| hardcases | 51 | 0.824 → 0.824 | 0.847 → 0.847 | **no change** (per-category f5/over_tag identical in all 8; integrity 0.020→0.039) |
+| ood_probe | 36 | 0.778 → 0.778 | 0.786 → 0.786 | **no change** (integrity 0.0→0.028) |
+| adversarial | 40 | 0.775 → 0.750 | 0.743 → **0.669** | **worse** (recall 0.74→0.67, precision 0.80→0.72, leakage 0.175→0.225) |
+| heldout_names | 74 | 0.865 → 0.851 | 0.989 → **0.963** | **worse** (recall 1.00→0.97, consistency 0.946→0.919) |
+
+**Read:** the Day-5 bet (does DPO sharpen spec-adherence beyond SFT?) resolves **no** here. Cause: DPO's
+reference is the adapter-disabled **base** (not SFT), so the KL term regularizes toward the base's
+worse, over-tagging behavior — no pressure to improve past SFT, and where the (tiny, 50-step) update
+moved the policy at all it drifted back toward base, giving the mild adversarial/heldout regression.
+Reported as-is per the falsifiable-bet ethos; the principled next experiment is a **SFT reference**
+(methodological, not β/lr tuning). Full detail: [`docs/model-card-dpo.md`](model-card-dpo.md).
 
 ---
 

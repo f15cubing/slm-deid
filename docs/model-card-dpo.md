@@ -64,10 +64,42 @@ quarantined sets (`hardcases`, `adversarial`, `heldout_names`, `ood_probe`) so t
 directly comparable. **Win condition:** DPO improves `over_tag` / `consistency` / precision on the hard
 cases without regressing recall. Reports written to `outputs/dpo_reports/`.
 
-## Results
-_Pending the Colab run. To be filled from `outputs/dpo_reports/` (base → sft → dpo), with 95% bootstrap
-CIs via `python -m src.eval.report`, and cross-linked into `docs/results.md`. If DPO does **not** beat
-SFT, that is reported as-is — a null result on the stretch rung is a legitimate finding._
+## Results — DPO did **not** beat SFT (honest null / mild-negative result)
+_Run 2026-07-11 on a Colab **T4** (4-bit; micro-batch 1 × grad-accum 16 = eff. batch 16, seq 1024,
+1 epoch, β=0.1, lr 5e-6, 50 steps). 790 preference pairs (112 on-policy + 678 backfill, `eval_leak=0`).
+`base` / `sft-gpt551` / `dpo` scored on the same T4 runtime. The SFT column reproduces the published
+gpt551 numbers almost exactly (hardcases pass 0.824, over_tag 0.157), so the comparison is clean._
+
+**sft-gpt551 → dpo** (pass_rate / f5 / over_tag / integrity_viol / consistency):
+
+| Eval set | n | SFT pass | DPO pass | SFT f5 | DPO f5 | Δ verdict |
+|---|---|---|---|---|---|---|
+| hardcases | 51 | 0.824 | 0.824 | 0.847 | 0.847 | **no change** (integrity 0.020→0.039) |
+| ood_probe | 36 | 0.778 | 0.778 | 0.786 | 0.786 | **no change** (integrity 0.0→0.028) |
+| adversarial | 40 | 0.775 | 0.750 | 0.743 | **0.669** | **worse** (recall 0.74→0.67, prec 0.80→0.72, leak 0.175→0.225) |
+| heldout_names | 74 | 0.865 | 0.851 | 0.989 | 0.963 | **worse** (recall 1.00→0.97, consistency 0.946→0.919) |
+
+Per-category on hardcases: **byte-identical SFT vs DPO in all 8 categories** (every f5 and over_tag
+unchanged; overall consistency 0.56→0.56). DPO produced **no measurable change** on the hard cases and
+a **mild regression** on the robustness/generalization sets. **No axis improved.**
+
+### The read (honest)
+The Day-5 bet — *does preference optimization sharpen spec-adherence beyond SFT?* — comes back **no**
+for this setup. Two compounding reasons, both anticipated in the method notes above:
+
+1. **Reference = base, not SFT.** With `ref_model=None` the KL term regularizes toward the *base*
+   model, which over-tags heavily. So DPO had no incentive to push *past* SFT — and where it moved the
+   policy at all (adversarial / held-out), it drifted back toward base-like behavior, which is exactly
+   the mild regression observed. A proper **SFT reference** (the model card's documented follow-up) is
+   the single most likely fix and the obvious next experiment.
+2. **The update was tiny.** 1 epoch at lr 5e-6 over 50 steps left greedy hardcase/ood outputs
+   unchanged. gpt551 is already near this LoRA's ceiling on the in-distribution hard cases, leaving
+   little for a gentle DPO pass to gain.
+
+Per the project's falsifiable-bet ethos, this is reported as-is. It is **not** patched by tuning
+β/lr/epochs to manufacture a win (that would violate the Day-4 ceiling). The principled follow-up is a
+**methodological** change (SFT reference), not knob-twiddling. Reports: `outputs/dpo_reports/`
+(gitignored; adapter + pairs on Drive at `MyDrive/slm-deid-dpo-gpt551/`).
 
 ## Honest limitations (method-level, pre-results)
 1. **Reference = base, not SFT** (see above) — the regularization target is weaker than a true
