@@ -147,5 +147,5 @@ template. See `src/infer.py` and `src/demo.py` in the repo.
 - Reproduce on Colab: `notebooks/v3_colab_train_eval.ipynb` — live teacher via `--provider openai`
   with `OPENAI_BASE_URL`/`TEACHER_MODEL` → frozen `configs/train.yaml` QLoRA → base-vs-tuned on
   `eval/hardcases`.
-- Source model cards (per run): `docs/model-card-gpt551.md`, `docs/model-card-v3.md`.
+- Source model cards (per run): `docs/archive/model-card-gpt551.md`, `docs/archive/model-card-v3.md`.
 - License: Apache-2.0 (inherits the Qwen3-1.7B base license).

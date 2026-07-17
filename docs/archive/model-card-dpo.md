@@ -1,7 +1,7 @@
 # Model card — `dpo-gpt551` (De-Id name-judgment, DPO on top of SFT)
 
 _Day-5 stretch rung 1. **Preference optimization (DPO)** applied on top of the canonical live-teacher
-SFT adapter (`sft-v3-gpt551`, see [`docs/model-card-gpt551.md`](model-card-gpt551.md)). Built by
+SFT adapter (`sft-v3-gpt551`, see [`docs/archive/model-card-gpt551.md`](model-card-gpt551.md)). Built by
 `notebooks/dpo_colab.ipynb`; the adapter + pairs + reports persist to `MyDrive/slm-deid-dpo-gpt551/`
 (gitignored)._
 

@@ -24,7 +24,7 @@ configs:
 # Dataset card — v3 (SFT training data)
 
 _The data `sft-v3-mps` trained on. Built 2026-07-08 to fix v2's recall/consistency regression by
-**rebalancing toward person-use and scaling up**. Supersedes `docs/dataset-card-v2.md`._
+**rebalancing toward person-use and scaling up**. Supersedes `docs/archive/dataset-card-v2.md`._
 
 ## What it is
 Short educational passages (essay + tutoring-dialogue), each byte-identical to its input except that real
@@ -73,7 +73,7 @@ varied** than a frontier teacher's — the main limitation of this build.
 On 2026-07-10 the **same v3 recipe** was re-run on Colab with a **live OpenAI-compatible teacher** (model
 id `gpt551`, via the TrueFoundry LLM Gateway — `--provider openai` + `OPENAI_BASE_URL`/`TEACHER_MODEL`)
 **plus an independent verifier pass**, producing the data the canonical **`sft-v3-gpt551`** model trained
-on (see `docs/model-card-gpt551.md`, `docs/results.md` → gpt551). This is the frontier-teacher regen the
+on (see `docs/archive/model-card-gpt551.md`, `docs/results.md` → gpt551). This is the frontier-teacher regen the
 authored build flagged as the follow-up, and it removes the "no independent verifier / low variety"
 limitation for this line.
 
@@ -139,4 +139,4 @@ from the reviewer). Review decisions are advisory metadata — they do not alter
 
 ## Provenance & reproduction
 - Config: `configs/datagen.yaml` (scale 2.0, seed 0; CRAPII folded at merge). Bank: `src/datagen/vocab.py`.
-- Commands: see `docs/model-card-v3.md` → Reproduction. Results: `docs/results.md` → v3.
+- Commands: see `docs/archive/model-card-v3.md` → Reproduction. Results: `docs/results.md` → v3.

@@ -29,12 +29,14 @@ and negative traps.
 
 | Path | What |
 |---|---|
+| `docs/final-report.md` | Results write-up: base-vs-tuned, per-category breakdown, limitations. |
+| `docs/results.md` | Every eval run with metric tables + confidence intervals. |
+| `MODEL_CARD.md`, `docs/dataset-card-v3.md` | Model and dataset cards published to the HuggingFace Hub. |
 | `docs/brainlift.md` | **Source of truth** — mandate, scope, facts (DOK 1–4), and spiky POVs (BrainLift v3). |
 | `docs/plan.md` | The one-week build plan (Mon Jul 6 → Sun Jul 12). |
 | `docs/STATUS.md` | Live "what's done / in-flight / next". Updated on every merge. |
-| `docs/agent-workflow-starter-kit.md` | The multi-agent workflow reference this repo's process is built on. |
-| `CLAUDE.md` | Always-loaded agent rules: hard ceilings + skill routing. |
-| `.claude/skills/` | Project skills: `shipping-changes`, `building-and-testing`. |
+| `CLAUDE.md`, `.claude/skills/` | Agent rules (hard ceilings + skill routing) and project skills. |
+| `docs/archive/` | Superseded version cards and daily process logs, kept for history. |
 
 ## Getting started
 

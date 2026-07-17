@@ -1,6 +1,6 @@
 # Submission runbook — run the GPU steps tonight (Colab)
 
-_Companion to [`completion-checklist.md`](completion-checklist.md). Everything code/writing here is
+_Companion to [`completion-checklist.md`](archive/completion-checklist.md). Everything code/writing here is
 done and green (202 passed); this is the copy-paste sequence to turn the finished artifacts into the
 submission package. Steps 1–3 need the Colab GPU + the Drive adapter; Step 4 is already committed._
 

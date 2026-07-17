@@ -7,7 +7,7 @@ _Last updated: 2026-07-11 — **consolidated final report + companion docs autho
 The prior "In flight" block was stale: every item had already merged to `main` (PRs #5, #11, #16, #20,
 #22, #27, #36, #37) — rolled into Done below. New this pass: [`docs/final-report.md`](final-report.md)
 (consolidated results + methodology: base vs the two 1.7B tunes vs frontier gpt-4.1 across all 5 sets),
-[`docs/next-steps-testing.md`](next-steps-testing.md), and [`docs/completion-checklist.md`](completion-checklist.md)
+[`docs/archive/next-steps-testing.md`](archive/next-steps-testing.md), and [`docs/archive/completion-checklist.md`](archive/completion-checklist.md)
 (step-by-step of what's left to ship). An independent data-integrity audit re-ran the suite (**192
 passed, 4 skipped, 0 failed**) and re-verified leakage (**0 exact + 0 substring** overlap, eval vs
 training) — all hard ceilings HELD. Remaining gaps are the Day 5–7 shipping layer (real demo, HF push,
@@ -18,9 +18,9 @@ bf16 MPS `sft-v3-mps` carry-over (byte-identical), not a 4-bit result — the 4-
 `sft-v3-colab-authored` on `eval/heldout_names` was never run (absent from all saved reports). That cell
 is now labelled bf16-MPS in `docs/eval-engine-comparison.md` + `docs/final-report.md`; base/gpt551/frontier
 rows are the genuine 4-bit/API session. The 4-bit re-run is CUDA-only (command in
-`docs/next-steps-testing.md` §1.2)._
+`docs/archive/next-steps-testing.md` §1.2)._
 
-_Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
+_Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (gpt551).** The last open follow-up is closed: a live OpenAI-compatible teacher (via the TrueFoundry gateway) + independent verifier generated the v3 data (818/90), and the frozen `configs/train.yaml` 4-bit QLoRA trained on an A100. base→tuned on the 51 hard cases: F5 0.51→0.85, over_tag 0.55→0.16, integrity 0.59→**0.02**, leakage 0.25→0.08, pass 0.35→**0.82**, consistency 0.38→0.56 (`eval_leak=0`, independently re-verified: 0 overlap vs 201 eval inputs). This removes the "authored-data / no-verifier" caveat that qualified every prior number — gpt551 is now the credible canonical line. Honest note: hard-case scores land BELOW the prior authored run (pass 0.82 vs 0.96), most likely because authored templates sit closer to the eval distribution. See `docs/results.md`→gpt551, `docs/archive/model-card-gpt551.md`, `docs/dataset-card-v3.md`. Enabled by a Colab EOS-token library-compat fix (PR #35). Held-out CRAPII probe shows judgment generalizes (0.88 recall) but byte-identity fails on messy text → span-offset fix in backlog._
 
 ## In flight
 - **[DPO] Stretch rung 1 — RAN on Colab; honest NULL result (DPO did not beat SFT). Draft PR, high-risk lane.**
@@ -39,7 +39,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
     improved. Leading cause: **ref = base (not SFT)**, so the KL term pulls back toward the base's worse
     behavior; the update was also tiny (1 epoch/lr 5e-6). **Principled follow-up = SFT reference** (a
     methodological fix, not β/lr tuning — the Day-4 ceiling forbids papering over this with knobs).
-    Numbers: `docs/results.md` → DPO; `docs/model-card-dpo.md` → Results. Adapter + pairs on Drive.
+    Numbers: `docs/results.md` → DPO; `docs/archive/model-card-dpo.md` → Results. Adapter + pairs on Drive.
 
 ## Done
 - **[gpt551] Canonical live-teacher 4-bit QLoRA run — DONE.** Live OpenAI-compatible teacher (TrueFoundry
@@ -50,7 +50,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   0.38→**0.56**; eval-leakage independently re-verified (0 exact + 0 substring overlaps vs all 201
   quarantined eval inputs). Removes the authored-data/no-verifier caveat → the credible canonical line.
   Scores land below the prior authored run (pass 0.82 vs 0.96) — honest read (likely eval-distribution
-  proximity of the templates) in `docs/results.md`→gpt551. Cards: `docs/model-card-gpt551.md`,
+  proximity of the templates) in `docs/results.md`→gpt551. Cards: `docs/archive/model-card-gpt551.md`,
   `docs/dataset-card-v3.md` (live-teacher section). Reports at `outputs/eval_reports_colab_gpt551/`
   (gitignored); adapter (133 MB) + splits on Drive, not committed. Run enabled by the EOS-token compat
   fix (PR #35).
@@ -82,7 +82,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
 - Project scaffold: `README.md`, `.gitignore`, `requirements.txt`.
 - Agent workflow: `CLAUDE.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.
-- `docs/plan.md` (one-week build plan) + `docs/agent-workflow-starter-kit.md` (workflow reference).
+- `docs/plan.md` (one-week build plan) + `docs/archive/agent-workflow-starter-kit.md` (workflow reference).
 - `docs/brainlift.md` (BrainLift v3 — source of truth: mandate, scope, DOK 1–4, spiky POVs).
 - `docs/tasks/` — per-day specs (day-1..7) + shared repo/schema contract (`docs/tasks/README.md`).
 - **[Day 1](tasks/day-1.md) — checkpoint MET.** `src/common/tags.py` (13 passing tests) with tag syntax
@@ -92,7 +92,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   (`Newton…`→`⟨NAME⟩Newton⟨/NAME⟩…`, no `<think>` leak). Scope locked to NAME-only.
   (Optional follow-up: pin `requirements.txt` from the Colab `pip freeze`.)
 
-- **[Day 2](tasks/day-2.md) — checkpoint MET.** Eval harness (behavioral checks + metrics + LLM-judge
+- **[Day 2](archive/tasks/day-2.md) — checkpoint MET.** Eval harness (behavioral checks + metrics + LLM-judge
   + base-vs-tuned scaffold), data-gen pipeline (teacher + Faker negatives + quality gate + orchestrator),
   training code (`train/{dataset,qlora}`), quarantined `eval/hardcases/` (51) + leakage guard; 67 tests.
   Full generate→train→eval loop verified end-to-end on Colab T4 (`notebooks/day2_smoke.ipynb`).
@@ -108,7 +108,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   hand-built dataset (the `generate` step still needs a teacher API key). New unit tests: `test_device.py`
   (7), `test_qlora_backend.py` (4).
 
-- **[Day 3](tasks/day-3.md) — MIDWEEK GATE MET.** v1 dataset (146 train/16 val; teacher 54% quality-gate
+- **[Day 3](archive/tasks/day-3.md) — MIDWEEK GATE MET.** v1 dataset (146 train/16 val; teacher 54% quality-gate
   drop, `eval_leak=0`) → LoRA on MPS (`train_loss 0.131`) → base-vs-tuned on the 51 quarantined hard cases.
   **F5 0.19→0.61, recall 0.19→0.63, leakage 0.41→0.20** (recall/F5 win — SPOV-7 validated), but
   **over-tag 0.10→0.37** (precision cost) so pass-rate is flat. Over-tagging concentrates where v1 data was
@@ -156,7 +156,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   tag. **Caveat:** teacher API was down, so v3 data authored in-session (`src/datagen/author.py`,
   `--provider authored`, now the keyless default on Colab) — no independent verifier pass, template text
   less varied (a frontier-teacher/canonical 4-bit run is the follow-up). Leakage 0 (3 guards + scan). Cards:
-  `docs/model-card-v3.md`, `docs/dataset-card-v3.md`.
+  `docs/archive/model-card-v3.md`, `docs/dataset-card-v3.md`.
 
 ## Done (recent — merged; was "In flight")
 > Reconciled 2026-07-11: every item below has merged to `main` (PRs #5, #11, #16, #20, #22, #27, #36,
@@ -218,7 +218,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   regressions: **consistency 0.25→0.125**, `person_vs_common` recall flat at 0.125. Methodology note:
   fp16 (the documented MPS default) NaN-diverged on the long CRAPII passages, so v2 is a **bf16
   re-baseline** (bf16 base reproduces the Day-3 fp16 base, so the comparison holds). Model card:
-  `docs/model-card-v2.md`; numbers: `docs/results.md` → v2; adapter + provenance: `outputs/sft-v2-mps/`.
+  `docs/archive/model-card-v2.md`; numbers: `docs/results.md` → v2; adapter + provenance: `outputs/sft-v2-mps/`.
   Not yet shipped (needs high-risk-lane review before merge).
 - **[Day 4] PR `agent/datagen-minpairs-gate` (high-risk, in review)** — data-iteration machinery to fix
   the Day-3 over-tagging (over_tag 0.10→0.37). Adds: matched **minimal-pair** teacher generation
@@ -231,7 +231,7 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
   training-config change; leakage guard strengthened, not weakened. 109 tests green.
 
 ## Next  — per `docs/tasks/`
-- **[Day 4](tasks/day-4.md) — fix in data, not hyperparameters:** generate targeted
+- **[Day 4](archive/tasks/day-4.md) — fix in data, not hyperparameters:** generate targeted
   `person_vs_place` / `person_vs_common` / `possessive` / eponym-negative examples (and optionally fold in
   the already-built CRAPII real slice, `src/datagen/real_data.py`) to cut the tuned model's over-tagging
   (0.37) and the integrity regression (0.12), then retrain + re-measure on those categories. Scale v1

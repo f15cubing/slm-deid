@@ -1,7 +1,7 @@
 # Completion checklist — what's missing to ship, step by step
 
-_Prepared 2026-07-11 · Companion to [`docs/final-report.md`](final-report.md) and
-[`docs/next-steps-testing.md`](next-steps-testing.md). This is the honest "what's left" list mapped to
+_Prepared 2026-07-11 · Companion to [`docs/final-report.md`](../final-report.md) and
+[`docs/archive/next-steps-testing.md`](next-steps-testing.md). This is the honest "what's left" list mapped to
 the plan's submission package (`docs/plan.md` → "Final submission package")._
 
 ## Headline
@@ -24,7 +24,7 @@ Two documentation-staleness items are also fixed as part of this pass (STATUS "I
 > remaining item is now built and green (202 passed) — real `src/demo.py`, consolidated
 > `MODEL_CARD.md`, `scripts/push_to_hub.py` + `scripts/push_dataset.py` (both eval-leakage guarded),
 > and the BrainLift verdict. What's left is **execution only**: run the three cells in
-> [`submission-runbook.md`](submission-runbook.md) on Colab (push model, push dataset, record demo).
+> [`submission-runbook.md`](../submission-runbook.md) on Colab (push model, push dataset, record demo).
 > The table below is updated to reflect that.
 
 | # | Checklist item | Status | What proves it / what's missing |

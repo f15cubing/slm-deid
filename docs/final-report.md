@@ -1,8 +1,8 @@
 # Final Report — Fine-tuning a 1.7B model for context-sensitive name judgment
 
 _Prepared 2026-07-11 · De-Id SLM · The consolidated results + methodology document. Companion docs:
-[`docs/next-steps-testing.md`](next-steps-testing.md) (what to test/benchmark next),
-[`docs/completion-checklist.md`](completion-checklist.md) (step-by-step of what's still missing to
+[`docs/archive/next-steps-testing.md`](archive/next-steps-testing.md) (what to test/benchmark next),
+[`docs/archive/completion-checklist.md`](archive/completion-checklist.md) (step-by-step of what's still missing to
 ship). Source of truth for the mandate is [`docs/brainlift.md`](brainlift.md); per-run detail lives in
 [`docs/results.md`](results.md) and [`docs/eval-engine-comparison.md`](eval-engine-comparison.md)._
 
@@ -233,7 +233,7 @@ Colab number like the other rows. A 4-bit-Colab eval of `sft-v3-colab-authored` 
 was never run (confirmed absent from all saved reports), so this cell is carried over from the bf16 MPS
 sibling model. The `base`, `gpt551`, and `frontier` rows ARE the genuine 4-bit/API session. Read the
 authored heldout row as a bf16 reference, not an apples-to-apples 4-bit result; the pending 4-bit re-run
-(command in `docs/next-steps-testing.md` §1.2) will replace it._
+(command in `docs/archive/next-steps-testing.md` §1.2) will replace it._
 
 **ood_probe (36)** — held-out vocab (disjoint from training)
 
@@ -324,7 +324,7 @@ through data beats capability accessed through prompting** — and it runs priva
   generation recipe frozen in `configs/datagen.yaml`. Splits + adapter (133 MB) live on Drive
   (`outputs/` is gitignored); only point values + CIs (regenerable from saved reports) are committed.
 - **Model:** `sft-v3-gpt551` (4-bit QLoRA adapter over `unsloth/Qwen3-1.7B-unsloth-bnb-4bit`) — card
-  `docs/model-card-gpt551.md`. Cross-check: `sft-v3-mps` (bf16, `docs/model-card-v3.md`).
+  `docs/archive/model-card-gpt551.md`. Cross-check: `sft-v3-mps` (bf16, `docs/archive/model-card-v3.md`).
 - **Eval harness + results:** `src/eval/` (behavioral checks + metrics + LLM-judge + base-vs-tuned) →
   tables regenerate offline via `python -m src.eval.report base=… tuned=…`. Full run detail in
   `docs/results.md` and `docs/eval-engine-comparison.md`.

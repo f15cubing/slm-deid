@@ -1,6 +1,6 @@
 # Next steps — testing & benchmarking
 
-_Prepared 2026-07-11 · Companion to [`docs/final-report.md`](final-report.md). This is the "what to test
+_Prepared 2026-07-11 · Companion to [`docs/final-report.md`](../final-report.md). This is the "what to test
 and benchmark next" backlog: experiments that would strengthen or stress the current result, ordered by
 value-per-effort. Everything here respects the hard ceilings in `CLAUDE.md` — in particular, **fixes go
 in the data, never the frozen hyperparameters**, and **nothing here feeds the quarantined eval sets into

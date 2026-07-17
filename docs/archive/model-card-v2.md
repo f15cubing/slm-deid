@@ -41,7 +41,7 @@ but the bf16 base reproduces the Day-3 fp16 base almost exactly, so base-vs-tune
 
 ## Training data summary (v2, CRAPII-augmented)
 **242 train / 26 val.** Byte-identical-except-tags passages in essay + tutoring-dialogue registers.
-Full dataset card (pre-CRAPII generation details, quality gates, drop funnel): `docs/dataset-card-v2.md`.
+Full dataset card (pre-CRAPII generation details, quality gates, drop funnel): `docs/archive/dataset-card-v2.md`.
 > Note: the dataset card documents the 164/18 synthetic core; **this training used the CRAPII-spliced
 > 242/26 splits** in `data/splits/` (commit `307b449`). The composition below is the as-trained data.
 

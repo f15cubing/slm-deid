@@ -11,12 +11,12 @@ Concrete, spec-level breakdown of `docs/plan.md`. Each day file has the same sha
 | Day | File | Focus |
 |-----|------|-------|
 | 1 | [day-1.md](day-1.md) | Environment + scope lock + tag syntax |
-| 2 | [day-2.md](day-2.md) | Behavior spec + eval harness + data-gen + smoke test |
-| 3 | [day-3.md](day-3.md) | v1 dataset + first QLoRA run + first base-vs-tuned numbers |
-| 4 | [day-4.md](day-4.md) | Error analysis → fix-in-data → retrain |
-| 5 | [day-5.md](day-5.md) | Ship-ready core + DPO (stretch 1) |
-| 6 | [day-6.md](day-6.md) | Adversarial eval (stretch 2) + final results table |
-| 7 | [day-7.md](day-7.md) | Ship & defend (publish dataset, HF model, demo, BrainLift verdict) |
+| 2 | [day-2.md](../archive/tasks/day-2.md) | Behavior spec + eval harness + data-gen + smoke test |
+| 3 | [day-3.md](../archive/tasks/day-3.md) | v1 dataset + first QLoRA run + first base-vs-tuned numbers |
+| 4 | [day-4.md](../archive/tasks/day-4.md) | Error analysis → fix-in-data → retrain |
+| 5 | [day-5.md](../archive/tasks/day-5.md) | Ship-ready core + DPO (stretch 1) |
+| 6 | [day-6.md](../archive/tasks/day-6.md) | Adversarial eval (stretch 2) + final results table |
+| 7 | [day-7.md](../archive/tasks/day-7.md) | Ship & defend (publish dataset, HF model, demo, BrainLift verdict) |
 
 Source of truth is `docs/brainlift.md`; hard ceilings are in `CLAUDE.md`. When a task conflicts with
 either, they win.
