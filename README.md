@@ -1,16 +1,13 @@
 # De-Id SLM — Context-Sensitive Personal-Name Judgment
 
 Fine-tune **Qwen3-1.7B (QLoRA)** to do the one part of de-identification a prompt can't reliably do:
-**context-sensitive personal-name judgment** — deciding, in context, whether a token is a person's
+**context-sensitive personal-name judgment**; deciding, in context, whether a token is a person's
 name or an identically-spelled non-person, every time, without drifting.
 
-Pattern types (email / phone / ID) and output format are handled by regex + constrained decoding in
-the surrounding pipeline. The **trained behavior, the dataset, and the eval are all about the
-judgment core**.
+Pattern types (email / phone / ID) and output format can be handled without a language model.
 
 > **Try it:** `python -m src.demo --adapter <sft-v3-gpt551 path>` runs the prompted base vs. the
-> fine-tune side-by-side on the ambiguous cases. Submission steps (HF push, demo video):
-> [`docs/submission-runbook.md`](docs/submission-runbook.md).
+> fine-tune side-by-side on the ambiguous cases.
 
 ## The behavior (the gate)
 
@@ -27,9 +24,7 @@ and negative traps.
 
 ## Results
 
-Base is the prompted Qwen3-1.7B with no fine-tune; tuned is the QLoRA fine-tune (canonical
-`gpt551` run). Aggregated over the quarantined hard-case eval sets — higher is better for
-recall / pass / consistency, lower for the rest:
+Base is the prompted Qwen3-1.7B with no fine-tune; tuned is the QLoRA fine-tune. Aggregated over the quarantined hard-case eval sets:
 
 | Metric | Base (prompted) | Tuned (QLoRA) |
 |---|--:|--:|
@@ -52,8 +47,6 @@ orders of magnitude smaller. Full tables with 95% confidence intervals:
 | `docs/final-report.md` | Results write-up: base-vs-tuned, per-category breakdown, limitations. |
 | `docs/results.md` | Every eval run with metric tables + confidence intervals. |
 | `docs/model-card.md`, `docs/dataset-card-v3.md` | Model and dataset cards published to the HuggingFace Hub. |
-| `docs/brainlift.md` | **Source of truth** — mandate, scope, facts (DOK 1–4), and spiky POVs (BrainLift v3). |
-| `docs/plan.md` | The one-week build plan (Mon Jul 6 → Sun Jul 12). |
 | `docs/STATUS.md` | Live "what's done / in-flight / next". Updated on every merge. |
 | `docs/archive/` | Superseded version cards and daily process logs, kept for history. |
 
@@ -83,5 +76,3 @@ python -m src.eval.run --split eval/hardcases --model base    # eval the prompte
 python -m src.eval.run --split eval/hardcases --model tuned   # eval the fine-tune
 python -m src.demo                                            # base-vs-tuned inference demo
 ```
-
-See `docs/plan.md` for the day-by-day build arc.
