@@ -18,8 +18,7 @@ Concrete, spec-level breakdown of `docs/plan.md`. Each day file has the same sha
 | 6 | [day-6.md](../archive/tasks/day-6.md) | Adversarial eval (stretch 2) + final results table |
 | 7 | [day-7.md](../archive/tasks/day-7.md) | Ship & defend (publish dataset, HF model, demo, BrainLift verdict) |
 
-Source of truth is `docs/brainlift.md`; hard ceilings are in `CLAUDE.md`. When a task conflicts with
-either, they win.
+Source of truth is `docs/brainlift.md`. When a task conflicts with it, it wins.
 
 ---
 

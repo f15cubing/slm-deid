@@ -2,7 +2,6 @@ name: code-quality
 
 # The code-quality loop: lint + format-check + tests on every push and PR.
 # Mirrors `make check` so a green tick here == a green `make check` locally.
-# This is the gate the `shipping-changes` skill's "verify what's verifiable" step relies on.
 
 on:
   push:

@@ -607,8 +607,8 @@ derived from those two reports. -->
    `[0.39, 0.67]` overlap heavily). The tuned model learned to tag aggressively but not yet to *withhold*
    on identically-spelled non-persons.
 3. **Cost #2 — integrity (a HARD CEILING) got worse.** `integrity_violation_rate` (output-minus-tags ==
-   input) roughly **tripled**, 0.039 → 0.118. Altering the passage text is a hard ceiling per
-   `CLAUDE.md`, so this is a **safety regression**, not a mere quality dip — even though the CIs still
+   input) roughly **tripled**, 0.039 → 0.118. Altering the passage text is a hard project ceiling,
+   so this is a **safety regression**, not a mere quality dip — even though the CIs still
    overlap (base `[0.00, 0.10]` vs tuned `[0.04, 0.22]`), so the *size* is uncertain on n=51. It
    concentrates in `person_vs_common` (0.000 → 0.250) where the model emits malformed/garbled tag runs.
    **This must be driven back down** (targeted data + tighter decoding), and it must not be papered over.

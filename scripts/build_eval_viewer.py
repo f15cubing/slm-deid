@@ -321,7 +321,7 @@ HTML_TEMPLATE = r"""<!doctype html>
   <p class="legend">What the numbers look like on the page. Every string below is a <b>real generated
     output</b> copied verbatim from the eval report pair <code id="cmp-src"></code> &mdash; not gold
     targets, not hand-edited. The tune tags the right span and changes nothing else; the base leaks,
-    over-tags, and breaks byte-integrity. One honest tuned failure is kept in (per <code>CLAUDE.md</code>).</p>
+    over-tags, and breaks byte-integrity. One honest tuned failure is kept in.</p>
   <details class="prompt" id="promptbox" open>
     <summary>The prompt &mdash; identical for both models (only the weights differ)</summary>
     <div class="pbody">
