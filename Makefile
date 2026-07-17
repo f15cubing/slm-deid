@@ -1,9 +1,8 @@
 # Code-quality loop for the De-Id SLM project.
 #
-# `make check` is the green gate the `shipping-changes` skill refers to: lint +
-# format-check + tests, in the same order CI runs them. Run it before every PR.
-# The ML build/train/eval commands live in `.cursor/skills/building-and-testing/`
-# (mirrored to `.claude/skills/`); this file is only the code-quality gate.
+# `make check` is the green gate to run before every PR: lint + format-check +
+# tests, in the same order CI runs them. This file is only the code-quality gate;
+# the ML build / train / eval commands are documented in the README.
 #
 # On a Mac, MPS ops that aren't implemented fall back to CPU via PYTORCH_ENABLE_MPS_FALLBACK.
 

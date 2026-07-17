@@ -1,6 +1,6 @@
 # STATUS — live project state
 > The single "what's actually done / in-flight / next" view. Every merged PR updates its line here in
-> the same merge (rule in `shipping-changes`). Keep this SKIMMABLE — roll old entries into a CHANGELOG,
+> the same merge. Keep this SKIMMABLE — roll old entries into a CHANGELOG,
 > don't append forever.
 
 _Last updated: 2026-07-11 — **consolidated final report + companion docs authored; STATUS reconciled.**
@@ -76,12 +76,9 @@ _Prior update: 2026-07-10 — **canonical LIVE-teacher 4-bit QLoRA run landed (g
 - **Code-quality loop (`make check` + CI)** — `Makefile` gate (ruff `check` + `format --check` + `pytest`)
   and a GitHub Actions `code-quality` workflow running the same on every push/PR. Made the baseline green:
   `ruff format` on `src/`+`tests/` and excluded exploratory `notebooks/` from the linter (`pyproject.toml`).
-  Project skills mirrored to `.claude/skills/` (symlinks into `.cursor/skills/`) so Claude Code discovers
-  `shipping-changes` + `building-and-testing` too. CI installs only the CPU deps the hermetic suite uses
-  (ruff/pytest/torch/faker). 124 passed, 2 skipped.
+  CI installs only the CPU deps the hermetic suite uses (ruff/pytest/torch/faker). 124 passed, 2 skipped.
 - Repo initialized and connected to `origin` (github.com/f15cubing/slm-deid, now public).
 - Project scaffold: `README.md`, `.gitignore`, `requirements.txt`.
-- Agent workflow: `CLAUDE.md` (ceilings + routing), `shipping-changes` + `building-and-testing` skills.
 - `docs/plan.md` (one-week build plan) + `docs/archive/agent-workflow-starter-kit.md` (workflow reference).
 - `docs/brainlift.md` (BrainLift v3 — source of truth: mandate, scope, DOK 1–4, spiky POVs).
 - `docs/tasks/` — per-day specs (day-1..7) + shared repo/schema contract (`docs/tasks/README.md`).

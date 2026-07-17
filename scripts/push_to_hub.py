@@ -1,6 +1,6 @@
 """Publish the tuned LoRA adapter + model card to the HuggingFace Hub (submission checklist #2).
 
-Uploads a local adapter directory (e.g. the `sft-v3-gpt551` folder from Drive) and `MODEL_CARD.md`
+Uploads a local adapter directory (e.g. the `sft-v3-gpt551` folder from Drive) and `docs/model-card.md`
 (as the repo's `README.md`) to a model repo. Run it from Colab where the adapter is mounted:
 
     python scripts/push_to_hub.py \
@@ -100,7 +100,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--adapter", required=True, type=Path, help="Local adapter directory.")
     parser.add_argument("--repo-id", required=True, help="Target Hub repo, e.g. user/slm-deid.")
-    parser.add_argument("--card", type=Path, default=REPO / "MODEL_CARD.md")
+    parser.add_argument("--card", type=Path, default=REPO / "docs" / "model-card.md")
     parser.add_argument("--private", action="store_true", help="Create the repo private.")
     parser.add_argument(
         "--dry-run", action="store_true", help="Run the leak-guard + summary, do not upload."

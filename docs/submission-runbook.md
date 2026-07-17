@@ -51,7 +51,7 @@ from huggingface_hub import login; login()
 !python scripts/push_to_hub.py --adapter "$ADAPTER" --repo-id "$REPO_ID"
 ```
 
-Uploads the adapter weights + `MODEL_CARD.md` (as the repo README). Guard refuses if the adapter dir
+Uploads the adapter weights + `docs/model-card.md` (as the repo README). Guard refuses if the adapter dir
 contains anything that looks like eval data.
 
 ## 3. Push the dataset to the Hub (checklist #1) — hard-ceiling guarded

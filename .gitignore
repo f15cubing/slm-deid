@@ -53,8 +53,6 @@ secrets/
 # Human approve/deny decisions from scripts/review_ui.py (data, not code)
 reviews/
 
-# Claude Code (keep committed skills in .claude/skills/; ignore local/session state)
-.claude/settings.local.json
-.claude/worktrees/
-.claude/todos/
-.claude/projects/
+# Claude Code (local dev tooling — not part of the published product)
+CLAUDE.md
+.claude/
