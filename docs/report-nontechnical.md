@@ -4,7 +4,7 @@
 
 > A plain-language walkthrough of what we've built, how it was trained and tested, and how well it
 > works — with just enough method and numbers to judge the results. For the full technical detail see
-> **[`docs/final-report.md`](final-report.md)**, `docs/model-card-gpt551.md`, `docs/dataset-card-v3.md`,
+> **[`docs/final-report.md`](final-report.md)**, `docs/archive/model-card-gpt551.md`, `docs/dataset-card-v3.md`,
 > and `docs/results.md`.
 >
 > *What changed since report v1 (2026-07-09): we replaced the "canonical" model with a more credible one
@@ -202,7 +202,7 @@ We've been careful not to oversell this:
   text is guaranteed untouched.
 
 *What's still to do before final submission is mostly packaging — a live demo, publishing the model and
-dataset, and a short demo video. See [`docs/completion-checklist.md`](completion-checklist.md).*
+dataset, and a short demo video. See [`docs/archive/completion-checklist.md`](archive/completion-checklist.md).*
 
 ## The bigger point
 

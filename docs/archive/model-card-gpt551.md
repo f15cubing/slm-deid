@@ -73,4 +73,4 @@ tables + 95% bootstrap CIs: `docs/results.md` → gpt551. Headlines (base → tu
 - Reproduce (Colab, `notebooks/v3_colab_train_eval.ipynb`): live teacher via `--provider openai` with
   `OPENAI_BASE_URL`/`TEACHER_MODEL` set to the gateway → frozen `configs/train.yaml` QLoRA → base-vs-tuned
   on `eval/hardcases`. Data-only iteration; hyperparameters frozen (Day-4 rule).
-- Related: [[slm-deid]] lineage — `docs/model-card-v3.md` (bf16 MPS), `docs/results.md` (all runs).
+- Related: [[slm-deid]] lineage — `docs/archive/model-card-v3.md` (bf16 MPS), `docs/results.md` (all runs).

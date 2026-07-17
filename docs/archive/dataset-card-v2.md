@@ -87,6 +87,6 @@ true pairs, `person_vs_eponym` 4, `person_vs_place` 3, `possessive` 0.
 ## Provenance & reproduction
 - Config: `configs/datagen.yaml` (`scale: 1.0`, `seed: 0`); vocab bank: `src/datagen/vocab.py`.
 - Command: `python -m src.datagen.generate --config configs/datagen.yaml --provider openai`.
-- Error analysis that motivated this iteration: [`docs/error-analysis-v1.md`](error-analysis-v1.md).
-- Results (base vs. tuned) will be appended for v2 in [`docs/results.md`](results.md) after the
+- Error analysis that motivated this iteration: [`docs/error-analysis-v1.md`](../error-analysis-v1.md).
+- Results (base vs. tuned) will be appended for v2 in [`docs/results.md`](../results.md) after the
   `sft-v2` retrain + re-eval.

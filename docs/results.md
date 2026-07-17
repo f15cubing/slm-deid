@@ -20,9 +20,9 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
   0.04→0.10, pass 0.96→0.88, `negative_trap` over_tag 0→0.40 vs the scale=2 canonical. Not canonical.
 - **[v3-mps (data rebalance)](#v3-mps-data-rebalance--prior-mps-bf16) — prior (MPS bf16).** Rebalanced +
   scaled data (927/102), bf16. Fixed v2's recall/consistency regression: recall 0.44→0.93, consistency
-  0.13→0.75, leakage →0.04, with over-tag/integrity held. Model card: [`docs/model-card-v3.md`](model-card-v3.md).
+  0.13→0.75, leakage →0.04, with over-tag/integrity held. Model card: [`docs/archive/model-card-v3.md`](archive/model-card-v3.md).
 - **[v2 (Day 4)](#v2-day-4--prior) — prior.** CRAPII-augmented data (242/26). Fixed over-tagging +
-  integrity, but recall/consistency regressed. Model card: [`docs/model-card-v2.md`](model-card-v2.md).
+  integrity, but recall/consistency regressed. Model card: [`docs/archive/model-card-v2.md`](archive/model-card-v2.md).
 - **[v1 (Day 3)](#v1-day-3--prior) — prior.** First numbers; high recall but 0.37 over-tag + integrity
   regression.
 - **[OOD generalization probe](#ood-generalization-probe-v3) — v3 stress test.** 36 fresh cases whose
@@ -33,7 +33,7 @@ _Base-vs-tuned numbers on the quarantined 51 hard cases. Tables and 95% bootstra
   the gpt551 SFT adapter (790 preference pairs, `eval_leak=0`) **did not beat SFT**: byte-identical on the
   hard cases (all 8 categories) and ood, mild regression on adversarial/heldout. Leading cause: the DPO
   reference is the *base* model, so the KL term pulls back toward base behavior. Full read + the
-  SFT-reference follow-up: [`docs/model-card-dpo.md`](model-card-dpo.md).
+  SFT-reference follow-up: [`docs/archive/model-card-dpo.md`](archive/model-card-dpo.md).
 
 ---
 
@@ -56,7 +56,7 @@ reference is the adapter-disabled **base** (not SFT), so the KL term regularizes
 worse, over-tagging behavior — no pressure to improve past SFT, and where the (tiny, 50-step) update
 moved the policy at all it drifted back toward base, giving the mild adversarial/heldout regression.
 Reported as-is per the falsifiable-bet ethos; the principled next experiment is a **SFT reference**
-(methodological, not β/lr tuning). Full detail: [`docs/model-card-dpo.md`](model-card-dpo.md).
+(methodological, not β/lr tuning). Full detail: [`docs/archive/model-card-dpo.md`](archive/model-card-dpo.md).
 
 ---
 
@@ -178,7 +178,7 @@ python -m src.eval.report \
   `[0.00, 1.00]`-wide bands.
 - **Live teacher, but a single teacher + single verifier pass.** Labels come from one OpenAI teacher
   model with one independent verifier gate — better than authored templates, but not a multi-teacher
-  consensus. Teacher/verifier model ids are recorded in the run provenance ([`docs/model-card-gpt551.md`](model-card-gpt551.md)).
+  consensus. Teacher/verifier model ids are recorded in the run provenance ([`docs/archive/model-card-gpt551.md`](archive/model-card-gpt551.md)).
 - **Reports gitignored.** `base`/`tuned` JSON live at `outputs/eval_reports_colab_gpt551/` (git-ignored
   like all `outputs/`); tables regenerate offline via the command above. Adapter + exact splits alongside
   on Drive (the 133 MB adapter is not committed).
@@ -216,7 +216,7 @@ explained by the four failures below.
 
 1. `Summer felt endless…` → tagged "Summer" (season). Genuine false-positive on a common-word name.
 2. `Halley's comet…` → tagged "Halley" (eponymous possessive). Genuine — consistent with the residual
-   eponymous-possessive over-tag already flagged in [`docs/model-card-v3.md`](model-card-v3.md).
+   eponymous-possessive over-tag already flagged in [`docs/archive/model-card-v3.md`](archive/model-card-v3.md).
 3. `My advisor, Dr. Nakamura,…` and 4. `Dear Dr. Okonkwo,…` → the model **found** the name but tagged the
    honorific inside the span (`⟨NAME⟩Dr. Nakamura⟨/NAME⟩`). Exact-span scoring counts this as both leak
    and over-tag, but it is a **span-boundary quirk, not a judgment miss** — and arguably privacy-safe

@@ -134,7 +134,7 @@ byte-identical across all six metrics (verified). No 4-bit-Colab eval of `sft-v3
 `frontier` rows here ARE the genuine 4-bit/API session. Read the authored heldout row as a bf16 reference,
 not an apples-to-apples 4-bit result. **To close this:** run the 4-bit eval on Colab and replace the row —
 `python -m src.eval.run --split eval/heldout_names --compare base outputs/sft-v3-colab-authored --backend unsloth`
-(tracked in `docs/next-steps-testing.md` §1.2)._
+(tracked in `docs/archive/next-steps-testing.md` §1.2)._
 
 **ood_probe (36)** — held-out vocab (disjoint from training)
 
