@@ -1,7 +1,8 @@
 """Publish the tuned LoRA adapter + model card to the HuggingFace Hub (submission checklist #2).
 
-Uploads a local adapter directory (e.g. the `sft-v3-gpt551` folder from Drive) and `docs/model-card.md`
-(as the repo's `README.md`) to a model repo. Run it from Colab where the adapter is mounted:
+Uploads a local adapter directory (e.g. the `sft-v3-gpt551` folder from Drive) and
+`docs/model-card.md` (as the repo's `README.md`) to a model repo. Run it from Colab where the
+adapter is mounted:
 
     python scripts/push_to_hub.py \
         --adapter /content/drive/MyDrive/slm-deid-v3/sft-v3-gpt551 \
