@@ -17,15 +17,8 @@ anthropic>=0.34
 
 # Pipeline / negatives / eval
 presidio-analyzer
-presidio-anonymizer
 faker
-pydantic>=2.7
 pyyaml>=6.0
-
-# Eval harness + reporting
-pandas>=2.2
-scikit-learn>=1.5
-rich>=13.7
 
 # Publishing (model + dataset to the HuggingFace Hub — scripts/push_*.py)
 huggingface_hub>=0.24
